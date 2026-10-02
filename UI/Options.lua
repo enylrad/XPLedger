@@ -153,13 +153,10 @@ function Options:BuildPanel(panel)
     end)
     widgets.lock:SetPoint("TOPLEFT", x, y - 54)
 
-    widgets.hideAtMax = Theme:CreateCheckbox(panel, "OPT_LAUNCHER_HIDE_MAX", LauncherGetter("hideAtMax"), LauncherSetter("hideAtMax"))
-    widgets.hideAtMax:SetPoint("TOPLEFT", x, y - 80)
-
     widgets.perCharacter = Theme:CreateCheckbox(panel, "OPT_LAUNCHER_PER_CHAR", LauncherGetter("perCharacter"), LauncherSetter("perCharacter"))
-    widgets.perCharacter:SetPoint("TOPLEFT", x, y - 106)
+    widgets.perCharacter:SetPoint("TOPLEFT", x, y - 80)
 
-    Caption(panel, "OPT_LAUNCHER_TEXT", x, y - 140)
+    Caption(panel, "OPT_LAUNCHER_TEXT", x, y - 114)
     widgets.textMode = Theme:CreateDropdown(panel, 220, function()
         local options = {}
         for _, mode in ipairs({ "eta", "percent", "rate", "remaining" }) do
@@ -167,24 +164,24 @@ function Options:BuildPanel(panel)
         end
         return options
     end, LauncherGetter("textMode"), LauncherSetter("textMode"))
-    widgets.textMode:SetPoint("TOPLEFT", x, y - 156)
+    widgets.textMode:SetPoint("TOPLEFT", x, y - 130)
 
     widgets.scale = Theme:CreateSlider(panel, "OPT_LAUNCHER_SCALE", 0.6, 2, 0.05,
         function(value) return ("%d%%"):format(value * 100 + 0.5) end,
         LauncherGetter("scale"), LauncherSetter("scale"))
-    widgets.scale:SetPoint("TOPLEFT", x, y - 196)
+    widgets.scale:SetPoint("TOPLEFT", x, y - 170)
     widgets.scale:SetWidth(280)
 
     widgets.alpha = Theme:CreateSlider(panel, "OPT_LAUNCHER_ALPHA", 0.2, 1, 0.05,
         function(value) return ("%d%%"):format(value * 100 + 0.5) end,
         LauncherGetter("alpha"), LauncherSetter("alpha"))
-    widgets.alpha:SetPoint("TOPLEFT", x, y - 244)
+    widgets.alpha:SetPoint("TOPLEFT", x, y - 218)
     widgets.alpha:SetWidth(280)
 
     local resetPosition = Theme:CreateButton(panel, "OPT_RESET_POSITION", 160, 22, function()
         ns.Launcher:ResetPosition()
     end)
-    resetPosition:SetPoint("TOPLEFT", x, y - 296)
+    resetPosition:SetPoint("TOPLEFT", x, y - 270)
 
     ---------------------------------------------------------- Goals and alerts
     x, y = COLUMN_X[2], -440
@@ -237,7 +234,8 @@ function Options:BuildPanel(panel)
             self:Refresh()
         end)
     end)
-    resetAll:SetPoint("LEFT", resetCharacter, "RIGHT", 8, 0)
+    -- Stacked: side by side they overflow into the right column.
+    resetAll:SetPoint("TOPLEFT", resetCharacter, "BOTTOMLEFT", 0, -6)
 end
 
 --- Re-reads every setting into the widgets (the values can change elsewhere,

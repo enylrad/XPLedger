@@ -97,5 +97,5 @@ function Export:Show(kind, key)
     end
     local text = kind == "runs" and self:RunsCSV(record) or self:LevelsCSV(record)
     local titleKey = kind == "runs" and "EXPORT_RUNS_TITLE" or "EXPORT_LEVELS_TITLE"
-    ns.Theme:ShowTextDialog(ns.L[titleKey]:format(record.name or key), text)
+    ns.Theme:ShowTextDialog(ns.L[titleKey]:format(ns.MainPanel and ns.MainPanel.GetDisplayName(record) or key), text)
 end

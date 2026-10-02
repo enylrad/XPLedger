@@ -106,6 +106,13 @@ function Compat.GetMaxLevel()
     return maxLevel
 end
 
+--- Returns true when the character has reached the level cap. Unlike
+--- IsExperienceBlocked, experience turned off by the player does not count.
+function Compat.IsAtMaxLevel()
+    local level = ns.SafeNumber(UnitLevel("player"))
+    return level ~= nil and level >= Compat.GetMaxLevel()
+end
+
 --- Returns current xp, xp needed for the level and the level.
 --- Any of them is nil when the client hands out a secret value.
 function Compat.GetPlayerExperience()
@@ -246,9 +253,31 @@ end
 -- Identity
 --------------------------------------------------------------------------------
 
---- Returns the unique key of the logged character ("Name-Realm").
+--- Returns the surname of the logged character, or nil. Forever characters
+--- have a first name and a surname, and only the pair is unique: UnitName
+--- returns the surname as its second value (other flavors: the realm, which
+--- is nil for the player).
+function Compat.GetPlayerSurname()
+    if Compat.flavor ~= "forever" and not (C_PlayerInfo and C_PlayerInfo.ShouldDisplaySurname) then
+        return nil
+    end
+    local _, surname = UnitName("player")
+    surname = ns.SafeString(surname)
+    return surname ~= "" and surname or nil
+end
+
+--- Separator between a first name and a surname.
+function Compat.GetSurnameSeparator()
+    local consts = Constants and Constants.CharacterNameSeparatorConsts
+    return consts and consts.CHARACTERNAME_SURNAME_SEPARATOR or " "
+end
+
+--- Returns the unique key of the logged character ("Name-Realm", or
+--- "Name Surname-Realm" on Forever) plus the name, realm and surname.
 function Compat.GetCharacterKey()
     local name = UnitName("player")
     local realm = GetNormalizedRealmName and GetNormalizedRealmName() or GetRealmName():gsub("%s", "")
-    return ("%s-%s"):format(name, realm), name, realm
+    local surname = Compat.GetPlayerSurname()
+    local fullName = surname and (name .. Compat.GetSurnameSeparator() .. surname) or name
+    return ("%s-%s"):format(fullName, realm), name, realm, surname
 end

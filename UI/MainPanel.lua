@@ -55,16 +55,49 @@ function MainPanel:SetViewedKey(key)
     self:Refresh()
 end
 
---- Returns the colored display name of a character record.
+--- First name plus the surname on Forever.
+local function BaseName(record)
+    local name = record and record.name or "?"
+    if record and record.surname then
+        name = name .. ns.Compat.GetSurnameSeparator() .. record.surname
+    end
+    return name
+end
+
+--- True when another tracked character shows the same name.
+local function IsAmbiguous(record)
+    local name = BaseName(record)
+    for _, other in pairs(ns.db.characters) do
+        if other ~= record and BaseName(other) == name then
+            return true
+        end
+    end
+    return false
+end
+
+--- Plain display name of a character record. `withRealm`: true always adds
+--- the realm, false never, nil only when two tracked characters would
+--- otherwise look the same (two "Anthis" on different realms).
+function MainPanel.GetDisplayName(record, withRealm)
+    if not record then
+        return "?"
+    end
+    local name = BaseName(record)
+    if withRealm == nil then
+        withRealm = IsAmbiguous(record)
+    end
+    if withRealm and record.realm then
+        name = name .. "-" .. record.realm
+    end
+    return name
+end
+
+--- Returns the class colored display name of a character record.
 function MainPanel.FormatCharacterName(record, withRealm)
     if not record then
         return "?"
     end
-    local name = record.name or "?"
-    if withRealm and record.realm then
-        name = name .. "-" .. record.realm
-    end
-    return ns.ColorizeByClass(name, record.class)
+    return ns.ColorizeByClass(MainPanel.GetDisplayName(record, withRealm), record.class)
 end
 
 --------------------------------------------------------------------------------

@@ -179,11 +179,8 @@ end
 
 function Launcher:UpdateVisibility()
     local settings = Settings()
-    local shown = settings.shown
-    if shown and settings.hideAtMax and ns.Compat.IsExperienceBlocked() and not ns.Compat.IsExperienceDisabledByUser() then
-        shown = false
-    end
-    self.frame:SetShown(shown)
+    -- Passive at the level cap: the history stays available from /xpl.
+    self.frame:SetShown(settings.shown and not ns.Compat.IsAtMaxLevel())
 end
 
 --- Locks or unlocks the position, with visual and chat feedback.

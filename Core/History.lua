@@ -55,6 +55,22 @@ function History:EnsureLevel(level, partial)
     return record
 end
 
+--- The level cap is never tracked: no experience can be earned on it, so its
+--- record would only show an endless level in progress.
+local function IsTrackedLevel(level)
+    return level < ns.Compat.GetMaxLevel()
+end
+
+--- Closes a level that ended without a regular level up (boosts, squishes).
+local function CloseLevel(level)
+    local record = ns.char.levels[level]
+    if record and not record.playedEnd then
+        record.endedAt = record.endedAt or time()
+        record.playedEnd = History:GetPlayedNow()
+        record.partial = true
+    end
+end
+
 local function AddTo(map, key, amount)
     map[key] = (map[key] or 0) + amount
 end
@@ -89,10 +105,12 @@ function History:OnLevelUp(oldLevel, newLevel)
     finished.endedAt = now
     finished.playedEnd = self:GetPlayedNow() or finished.playedEnd
 
-    local started = self:EnsureLevel(newLevel, false)
-    started.startedAt = now
-    started.partial = false
-    started.playedStart = finished.playedEnd
+    if IsTrackedLevel(newLevel) then
+        local started = self:EnsureLevel(newLevel, false)
+        started.startedAt = now
+        started.partial = false
+        started.playedStart = finished.playedEnd
+    end
 
     ns.char.level = newLevel
     self:AddSample()
@@ -164,13 +182,15 @@ function History:OnTimePlayed(totalPlayed, levelPlayed)
     if not level then
         return
     end
-    local record = self:EnsureLevel(level, true)
-    record.playedStart = totalPlayed - levelPlayed
+    local playedStart = totalPlayed - levelPlayed
+    if IsTrackedLevel(level) then
+        self:EnsureLevel(level, true).playedStart = playedStart
+    end
 
     -- The previous level ended exactly when this one started.
     local previous = char.levels[level - 1]
     if previous and previous.endedAt then
-        previous.playedEnd = record.playedStart
+        previous.playedEnd = playedStart
     end
     ns:SendMessage("XPL_STATE_CHANGED")
 end
@@ -352,24 +372,33 @@ end
 --------------------------------------------------------------------------------
 
 function History:OnLogin()
-    local _, _, level = ns.Tracker:GetSnapshot()
-    if level then
-        local xp = ns.Tracker:GetSnapshot()
+    local xp, _, level = ns.Tracker:GetSnapshot()
+    if level and IsTrackedLevel(level) then
         self:EnsureLevel(level, (xp or 0) > 0)
         self:AddSample()
+    elseif level then
+        -- Older versions opened a record for the level cap; drop it when it
+        -- never held real data. The levels before it are kept untouched.
+        local record = ns.char.levels[level]
+        if record and not record.playedEnd and (record.xp or 0) == 0 then
+            ns.char.levels[level] = nil
+        end
     end
 
     ns:RegisterMessage("XPL_XP_GAINED", function(_, gain) self:OnExperienceGained(gain) end)
     ns:RegisterMessage("XPL_LEVEL_UP", function(_, oldLevel, newLevel) self:OnLevelUp(oldLevel, newLevel) end)
-    ns:RegisterMessage("XPL_LEVEL_CHANGED", function(_, _, newLevel)
+    ns:RegisterMessage("XPL_LEVEL_CHANGED", function(_, oldLevel, newLevel)
+        CloseLevel(oldLevel)
         ns.char.level = newLevel
-        self:EnsureLevel(newLevel, true)
+        if IsTrackedLevel(newLevel) then
+            self:EnsureLevel(newLevel, true)
+        end
     end)
     ns:RegisterMessage("XPL_DATA_RESET", function(_, key)
         if key == ns.charKey then
-            local xp, _, current = ns.Tracker:GetSnapshot()
-            if current then
-                self:EnsureLevel(current, (xp or 0) > 0)
+            local currentXP, _, current = ns.Tracker:GetSnapshot()
+            if current and IsTrackedLevel(current) then
+                self:EnsureLevel(current, (currentXP or 0) > 0)
             end
         end
     end)

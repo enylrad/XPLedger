@@ -211,7 +211,7 @@ function Levels:Build(content)
             if entry.key ~= viewedKey then
                 options[#options + 1] = {
                     value = entry.key,
-                    label = ("%s (%d)"):format(entry.record.name or entry.key, entry.record.level or 0),
+                    label = ("%s (%d)"):format(ns.MainPanel.GetDisplayName(entry.record), entry.record.level or 0),
                     color = ClassColor(entry.record),
                 }
             end
@@ -488,8 +488,8 @@ function Levels:Refresh()
     end
 
     if compare then
-        self.legend:SetText(("%s %s     %s %s"):format(Theme.Swatch(primaryColor), record.name or "?",
-            Theme.Swatch(compareColor), compare.name or "?"))
+        self.legend:SetText(("%s %s     %s %s"):format(Theme.Swatch(primaryColor), ns.MainPanel.FormatCharacterName(record),
+            Theme.Swatch(compareColor), ns.MainPanel.FormatCharacterName(compare)))
     else
         self.legend:SetText("")
     end

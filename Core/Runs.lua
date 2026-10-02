@@ -23,6 +23,8 @@ local MIN_DURATION = 60     -- shorter runs without experience are discarded
 
 Runs.KINDS = { party = "dungeon", scenario = "scenario" }
 
+local closeScheduled = false  -- a timer will re-check the run after the grace period
+
 --------------------------------------------------------------------------------
 -- Run lifecycle
 --------------------------------------------------------------------------------
@@ -70,7 +72,8 @@ function Runs:Update()
     local now = time()
     local run = ns.char.activeRun
     local info = ns.Compat.GetInstanceInfo()
-    local tracked = info and Runs.KINDS[info.instanceType]
+    -- Runs at the level cap give no experience and are not recorded.
+    local tracked = info and Runs.KINDS[info.instanceType] and not ns.Compat.IsAtMaxLevel()
 
     if run and run.leftAt and now - run.leftAt > REENTRY_GRACE then
         self:Finish()
@@ -84,10 +87,16 @@ function Runs:Update()
             self:Finish()
             StartRun(info)
         end
-    elseif run and not run.leftAt then
-        run.leftAt = now
+    elseif run then
+        run.leftAt = run.leftAt or now
         -- Close it once the grace period is over, even if nothing else happens.
-        C_Timer.After(REENTRY_GRACE + 1, function() self:Update() end)
+        if not closeScheduled then
+            closeScheduled = true
+            C_Timer.After(math.max(1, REENTRY_GRACE - (now - run.leftAt) + 1), function()
+                closeScheduled = false
+                self:Update()
+            end)
+        end
     end
     ns:SendMessage("XPL_STATE_CHANGED")
 end
@@ -157,6 +166,13 @@ function Runs:OnLogin()
     local function Update() self:Update() end
     ns:RegisterEvent("PLAYER_ENTERING_WORLD", Update)
     ns:RegisterEvent("ZONE_CHANGED_NEW_AREA", Update)
+    -- Logging out counts as leaving: the offline time must not extend the run.
+    ns:RegisterEvent("PLAYER_LOGOUT", function()
+        local run = ns.char.activeRun
+        if run and not run.leftAt then
+            run.leftAt = time()
+        end
+    end)
     ns:RegisterMessage("XPL_XP_GAINED", function(_, gain) self:OnExperienceGained(gain) end)
     ns:RegisterMessage("XPL_DATA_RESET", function(_, key)
         if key == ns.charKey then

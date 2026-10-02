@@ -4,6 +4,7 @@
     inferred from "hints" observed around the moment of the gain:
 
       kill         CHAT_MSG_COMBAT_XP_GAIN matching a "<mob> dies" message
+                   (the creature name is kept for the statistics)
       combat       CHAT_MSG_COMBAT_XP_GAIN that is unnamed or unreadable
       quest        QUEST_TURNED_IN (carries the quest xp reward)
       exploration  CHAT_MSG_SYSTEM matching the "Discovered <zone>" message
@@ -87,11 +88,28 @@ local function MatchesAny(text, patterns)
     return false
 end
 
+--- Returns the name of the creature of a kill message, or nil. The name is
+--- the capture that is not a number, whatever its position in the locale.
+local function MatchKill(text)
+    for i = 1, #killPatterns do
+        local captures = { text:match(killPatterns[i]) }
+        if #captures > 0 then
+            for _, capture in ipairs(captures) do
+                if capture ~= "" and not tonumber((capture:gsub("[%s%.,]", ""))) then
+                    return true, capture
+                end
+            end
+            return true, nil
+        end
+    end
+    return false
+end
+
 --------------------------------------------------------------------------------
 -- Hint collection
 --------------------------------------------------------------------------------
 
-local function AddHint(kind, amount)
+local function AddHint(kind, amount, extra)
     local now = GetTime()
     -- Drop stale hints so the list never grows unbounded.
     local fresh = {}
@@ -100,16 +118,24 @@ local function AddHint(kind, amount)
             fresh[#fresh + 1] = hints[i]
         end
     end
-    fresh[#fresh + 1] = { kind = kind, clock = now, amount = amount }
+    local hint = { kind = kind, clock = now, amount = amount }
+    for key, value in pairs(extra or {}) do
+        hint[key] = value
+    end
+    fresh[#fresh + 1] = hint
     hints = fresh
 end
 
 local function OnCombatExperience(_, text)
     local message = ns.SafeString(text)
+    local isKill, mobName
+    if message then
+        isKill, mobName = MatchKill(message)
+    end
     if not message then
         AddHint("combat")
-    elseif MatchesAny(message, killPatterns) then
-        AddHint("kill")
+    elseif isKill then
+        AddHint("kill", nil, { mobName = mobName })
     elseif MatchesAny(message, unnamedPatterns) then
         AddHint("combat")
     else
@@ -117,8 +143,8 @@ local function OnCombatExperience(_, text)
     end
 end
 
-local function OnQuestTurnedIn(_, _, xpReward)
-    AddHint("quest", ns.SafeNumber(xpReward))
+local function OnQuestTurnedIn(_, questID, xpReward)
+    AddHint("quest", ns.SafeNumber(xpReward), { questID = ns.SafeNumber(questID) })
 end
 
 local function OnSystemMessage(_, text)
@@ -189,6 +215,7 @@ function Sources:Classify(gain)
         hint.consumed = true
         ConsumeAll(gain, "combat")
         gain.source = "quest"
+        gain.questID = hint.questID
         return
     end
 
@@ -203,6 +230,7 @@ function Sources:Classify(gain)
     if hint then
         hint.consumed = true
         gain.source = "mob"
+        gain.mobName = hint.mobName
         return
     end
 

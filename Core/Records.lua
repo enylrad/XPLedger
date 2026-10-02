@@ -180,6 +180,21 @@ function Records:ForgetCharacter(key)
     end
 end
 
+--- Moves the records of a character to its new key (surname migration).
+function Records:RenameCharacter(oldKey, newKey)
+    local records = Store()
+    for _, kind in ipairs(self.KINDS) do
+        if records[kind] and records[kind].key == oldKey then
+            records[kind].key = newKey
+        end
+    end
+    for _, entry in pairs(records.levels) do
+        if entry.key == oldKey then
+            entry.key = newKey
+        end
+    end
+end
+
 --------------------------------------------------------------------------------
 -- Lifecycle
 --------------------------------------------------------------------------------

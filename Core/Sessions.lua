@@ -100,7 +100,7 @@ end
 
 function Sessions:Archive(session)
     local summary = self:Summarize(session, ns.char.level)
-    if summary.xp <= 0 and summary.endedAt - summary.startedAt < MIN_DURATION then
+    if summary.xp <= 0 and (summary.endedAt - summary.startedAt < MIN_DURATION or ns.Compat.IsAtMaxLevel()) then
         return nil
     end
     local sessions = ns.char.sessions

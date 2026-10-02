@@ -10,7 +10,7 @@
           records    = { ... see Records ... },
           characters = {
               ["Name-Realm"] = {
-                  name, realm, class, race, faction, flavor, level,
+                  name, surname, realm, class, race, faction, flavor, level,
                   firstSeen, lastSeen,
                   played, playedAt,             -- last /played total and when it was read
                   launcherPosition,             -- used when positions are per character
@@ -21,6 +21,7 @@
                   runs, activeRun               -- instance runs, see Runs
                   goal                          -- level goal, see Goals
                   sessions                      -- finished session summaries, see Sessions
+                  stats                         -- when/where/what statistics, see Stats
                   restedXP, restedAt, ...       -- offline rested estimate, see Rested
               },
           },
@@ -54,7 +55,6 @@ local DEFAULT_SETTINGS = {
     launcher = {
         shown = true,
         locked = false,
-        hideAtMax = true,
         perCharacter = false,
         scale = 1,
         alpha = 1,
@@ -65,6 +65,8 @@ local DEFAULT_SETTINGS = {
         range = "session",
         sourcesScope = "level",
         runsMode = "runs",
+        statsScope = "character",
+        statsPage = "summary",
     },
 }
 
@@ -75,6 +77,7 @@ local CHARACTER_DEFAULTS = {
     session = {},
     runs = {},
     sessions = {},
+    stats = {},
 }
 
 -- Ordered list of migrations. Each entry upgrades the database to `version`.
@@ -106,8 +109,22 @@ function Database:OnInitialize()
 end
 
 function Database:OnLogin()
-    local key, name, realm = ns.Compat.GetCharacterKey()
+    local key, name, realm, surname = ns.Compat.GetCharacterKey()
     local record = ns.db.characters[key]
+    if type(record) ~= "table" and surname then
+        -- Older versions keyed Forever characters without the surname: the
+        -- first character that logs in with that first name claims the record.
+        local legacyKey = ("%s-%s"):format(name, realm)
+        local legacy = ns.db.characters[legacyKey]
+        if type(legacy) == "table" and not legacy.surname then
+            ns.db.characters[legacyKey] = nil
+            record = legacy
+            ns.db.characters[key] = record
+            if ns.Records then
+                ns.Records:RenameCharacter(legacyKey, key)
+            end
+        end
+    end
     if type(record) ~= "table" then
         record = { firstSeen = time() }
         ns.db.characters[key] = record
@@ -117,6 +134,7 @@ function Database:OnLogin()
     local _, classFile = UnitClass("player")
     local _, raceFile = UnitRace("player")
     record.name = name
+    record.surname = surname
     record.realm = realm
     record.class = classFile
     record.race = raceFile
@@ -192,6 +210,7 @@ function Database:ResetCharacter(key)
     record.runs = nil
     record.sessions = nil
     record.activeRun = nil
+    record.stats = nil
     ns.ApplyDefaults(record, CHARACTER_DEFAULTS)
     ns:SendMessage("XPL_DATA_RESET", key)
 end

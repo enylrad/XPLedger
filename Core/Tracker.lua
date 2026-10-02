@@ -168,6 +168,7 @@ local function QueueGain(amount, level, restedUsed)
         context = Compat.GetActivityContext(),
         inCombat = Compat.InCombat(),
         inPetBattle = Compat.InPetBattle(),
+        zone = ns.SafeString(GetRealZoneText and GetRealZoneText()),
     }
     pendingGains[#pendingGains + 1] = gain
     C_Timer.After(CLASSIFY_DELAY, function() Tracker:FlushPendingGains() end)

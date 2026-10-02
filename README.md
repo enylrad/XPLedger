@@ -30,6 +30,11 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
   - *Runs*: every dungeon, delve and scenario run with its duration, XP and XP/hour, and
     a *Records* mode with the level goal and the account records (fastest time of every
     level, best session, best hour, biggest gain, best run).
+  - *Stats*: over forty statistics of the selected character or of the whole account.
+    *Summary* (fastest and slowest level, best and longest session, deaths, rested share,
+    most repeated instance...), *When* (XP per weekday and per hour, best day, streaks),
+    *Where* (XP, kills, quests and XP/hour per zone) and *Prey* (most killed creatures and
+    best rewarded quests). Account-wide bests name the character that holds them.
 - **Goals and alerts**: a level goal with an optional deadline (projected from your recent
   pace) and an experience goal per session. Alerts when a goal is reached, a record is
   beaten or the rested pool runs out, plus a milestone every 10 levels.
@@ -79,12 +84,21 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
   up to 150%.
 - **Runs**: entering a party or scenario instance starts a run; it ends when you leave.
   Coming back to the same instance within 10 minutes (a corpse run) continues it.
+- **Level cap**: at the maximum level the addon goes passive. Nothing new is recorded and the
+  shortcut and the Data Broker feed are hidden, but `/xpl` still opens the panel with the
+  leveling history of the character and the rested experience of the alts.
 
 ### Known limitations
 
 - Since Midnight, chat payloads can be hidden from addons while in combat or in instances.
   XPLedger never reads them in that case: experience gained in or right after combat is
   counted as monsters, which is correct for nearly every case.
+- Since Midnight the kill message is often hidden in combat and in instances, so the
+  creature ranking of the *Stats* tab misses those kills on Retail. The when/where/prey
+  statistics start counting with the version that introduced them.
+- On WoW: Forever a character is identified by first name and surname, so two characters
+  with the same first name are kept apart. Characters tracked by older versions are
+  matched to the first one that logs in with that first name.
 - Levels gained before installing the addon have no history. The level that was in progress
   when tracking started is marked as *partially tracked* (its played time is still exact).
 
@@ -109,7 +123,7 @@ Core/     namespace and events, localization, compatibility layer, database,
           summaries, CSV export
 Locales/  enUS (base) and esES (also used for esMX)
 UI/       theme facade, skins (Blizzard, Minimal), launcher, tooltip, graph widget,
-          main panel, views (overview, levels, characters, sources, runs), options, data broker
+          main panel, views (overview, levels, characters, sources, runs, stats), options, data broker
 Libs/     LibStub, CallbackHandler-1.0, LibDataBroker-1.1
 ```
 

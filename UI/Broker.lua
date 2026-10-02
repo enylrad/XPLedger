@@ -32,7 +32,9 @@ end
 function Broker:OnLogin()
     local LibStub = _G.LibStub
     local LDB = LibStub and LibStub("LibDataBroker-1.1", true)
-    if not LDB then
+    -- Characters at the level cap have nothing to show; a feed cannot be
+    -- withdrawn later, so one that dings the cap keeps it until the next login.
+    if not LDB or ns.Compat.IsAtMaxLevel() then
         return
     end
 
