@@ -10,22 +10,34 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
 ## Features
 
 - **Shortcut**: a small, minimalist bar showing your level, the time to level (or progress,
-  XP/hour or remaining XP), and a thin XP bar with the rested overlay.
+  XP/hour or remaining XP), and a thin XP bar with the rested overlay and, in gold, the
+  experience of the completed quests waiting to be turned in.
   - Drag it anywhere. **Right-click** to lock or unlock its position.
-  - **Left-click** opens the main window. Hover for a detailed summary.
+  - **Left-click** opens the main window. Hover for a detailed summary: rate, time to
+    level, kills / quests / runs left, quest log experience and when the rested pool is full.
 - **Main window**
   - *Overview*: XP/hour, time to level, session XP and time, level progress over time
-    (session, 24 hours, 7 days or all) and the XP/hour of the session in time blocks.
+    (session, 24 hours, 7 days or all), the XP/hour of the session in time blocks and the
+    kills, quests and runs left to level up.
   - *Levels*: cumulative played time line (optionally compared against another
     character), a per-level table (played, real time, XP, main source, difference)
-    and tiles for total, current level, recent pace and comparison.
+    and tiles for total, current level, recent pace and comparison. Hover a tile for details.
   - *Characters*: every tracked character with level, played time, average time per
-    level and when it was last seen.
+    level, estimated rested experience (it keeps growing while offline) and when it was
+    last seen. Export a character's levels as CSV.
   - *Sources*: experience by source (monsters, quests, exploration, pet battles, other)
     and by activity (open world, dungeons, raids, battlegrounds, scenarios and delves).
+  - *Runs*: every dungeon, delve and scenario run with its duration, XP and XP/hour, and
+    a *Records* mode with the level goal and the account records (fastest time of every
+    level, best session, best hour, biggest gain, best run).
+- **Goals and alerts**: a level goal with an optional deadline (projected from your recent
+  pace) and an experience goal per session. Alerts when a goal is reached, a record is
+  beaten or the rested pool runs out, plus a milestone every 10 levels.
+- **Session summary**: the last session is summarized at login, and `/xpl session` compares
+  the current one with the previous.
 - **Level up summary** in chat: played and real time spent on the level and its main source.
 - **Options** in the game's AddOns settings: language, interface style, rate window, idle
-  threshold, shortcut behavior, data reset.
+  threshold, shortcut behavior, alerts, data reset.
 - **Two interface styles**
   - *Blizzard* (default): built from the game's own templates, fonts and art, so the addon
     looks native in every client: Retail frames on Retail, Forever's art on Forever, the
@@ -43,6 +55,11 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
 | `/xpl lock` / `/xpl unlock` | Lock or unlock the shortcut |
 | `/xpl show` / `/xpl hide` | Show or hide the shortcut |
 | `/xpl reset` | Move the shortcut back to the center |
+| `/xpl goal <level> [days]` | Set a level goal, optionally with a deadline |
+| `/xpl goal session <xp>` | Set an experience goal per session (`0` turns it off) |
+| `/xpl goal` / `/xpl goal clear` | Show or remove the level goal |
+| `/xpl session` | Summary of the current session |
+| `/xpl export [runs]` | Copy your levels (or runs) as CSV |
 | `/xpl help` | List the commands |
 
 ## How it works
@@ -57,6 +74,11 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
   matched with what happened around it: the kill message, the quest turn-in, the exploration
   message, or a pet battle. The activity comes from the instance type you are in.
   Message patterns are built from the client's own strings, so it works in any language.
+- **Rested experience of alts**: the pool is saved at logout and grows offline with the game
+  rules: 5% of the level bar every 8 hours in an inn or city (a quarter of that elsewhere),
+  up to 150%.
+- **Runs**: entering a party or scenario instance starts a run; it ends when you leave.
+  Coming back to the same instance within 10 minutes (a corpse run) continues it.
 
 ### Known limitations
 
@@ -82,10 +104,12 @@ Then `/reload` in game after each change. Enable Lua errors with `/console scrip
 
 ```
 Core/     namespace and events, localization, compatibility layer, database,
-          tracker (rate engine), source attribution, level history
+          tracker (rate engine), source attribution, level history, rested estimate,
+          quest log experience, instance runs, records, goals and alerts, session
+          summaries, CSV export
 Locales/  enUS (base) and esES (also used for esMX)
 UI/       theme facade, skins (Blizzard, Minimal), launcher, tooltip, graph widget,
-          main panel, views (overview, levels, characters, sources), options, data broker
+          main panel, views (overview, levels, characters, sources, runs), options, data broker
 Libs/     LibStub, CallbackHandler-1.0, LibDataBroker-1.1
 ```
 
