@@ -186,6 +186,31 @@ function Options:BuildPanel(panel)
     end)
     resetPosition:SetPoint("TOPLEFT", x, y - 296)
 
+    ---------------------------------------------------------- Goals and alerts
+    x, y = COLUMN_X[2], -440
+    SectionTitle(panel, "OPT_SECTION_ALERTS", x, y)
+
+    local alertY = y - 28
+    for _, entry in ipairs({
+        { "rested", "OPT_ALERT_RESTED" },
+        { "goals", "OPT_ALERT_GOALS" },
+        { "records", "OPT_ALERT_RECORDS" },
+        { "milestones", "OPT_ALERT_MILESTONES" },
+        { "sound", "OPT_ALERT_SOUND" },
+    }) do
+        local kind = entry[1]
+        local check = Theme:CreateCheckbox(panel, entry[2],
+            function() return ns.settings.alerts[kind] end,
+            function(value) ns.settings.alerts[kind] = value end)
+        check:SetPoint("TOPLEFT", x, alertY)
+        widgets["alert_" .. kind] = check
+        alertY = alertY - 24
+    end
+
+    local goalHelp = Caption(panel, "OPT_GOALS_DESC", x, alertY - 6, "small")
+    goalHelp:SetWidth(280)
+    goalHelp:SetWordWrap(true)
+
     --------------------------------------------------------------------- Data
     x, y = COLUMN_X[1], -440
     SectionTitle(panel, "OPT_SECTION_DATA", x, y)

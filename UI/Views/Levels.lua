@@ -17,7 +17,6 @@ local CONTENT_WIDTH = 612
 local TILE_GAP = 8
 local ROW_HEIGHT = 20
 local VISIBLE_ROWS = 6
-local RECENT_LEVELS = 5
 local BAR_WIDTH = 80
 
 -- Column layout: locale key of the header, x offset, width and justification.
@@ -114,27 +113,6 @@ local function CollectCumulative(record)
         previous = level
     end
     return runs
-end
-
---- Recent pace: last completed level against the average of the previous ones.
-local function RecentPace(record)
-    local completed = {}
-    for _, level in ipairs(SortedLevels(record)) do
-        local played = CompletedPlayed(record, level)
-        if played then
-            completed[#completed + 1] = { level = level, played = played }
-        end
-    end
-    local last = completed[#completed]
-    local sum, count = 0, 0
-    for i = #completed - 1, math.max(1, #completed - RECENT_LEVELS), -1 do
-        sum, count = sum + completed[i].played, count + 1
-    end
-    local recentSum, recentCount = 0, 0
-    for i = #completed, math.max(1, #completed - RECENT_LEVELS + 1), -1 do
-        recentSum, recentCount = recentSum + completed[i].played, recentCount + 1
-    end
-    return last, count > 0 and sum / count or nil, recentCount > 0 and recentSum / recentCount or nil
 end
 
 local function AddCharacterLines(tooltip, record, level)
@@ -443,7 +421,7 @@ function Levels:RefreshTiles(record, compare)
         and ("%s  ·  %s"):format(L["LEVEL_SHORT"]:format(record.level), ns.FormatDuration(current))
         or L["DURATION_UNKNOWN"])
 
-    local last, previousAverage, recentAverage = RecentPace(record)
+    local last, previousAverage, recentAverage = ns.History:GetRecentPace(record)
     tiles[3].tooltip = nil
     if last then
         local text = ("%s·%s"):format(L["LEVEL_SHORT"]:format(last.level), ns.FormatDuration(last.played))

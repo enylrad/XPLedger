@@ -7,6 +7,7 @@
       XPLedgerDB = {
           schema     = <number>,
           settings   = { ... see DEFAULT_SETTINGS ... },
+          records    = { ... see Records ... },
           characters = {
               ["Name-Realm"] = {
                   name, realm, class, race, faction, flavor, level,
@@ -18,6 +19,7 @@
                   samples = { t = {}, v = {} }, -- progress over time (level + fraction)
                   session = { ... see Tracker },
                   runs, activeRun               -- instance runs, see Runs
+                  goal                          -- level goal, see Goals
                   restedXP, restedAt, ...       -- offline rested estimate, see Rested
               },
           },
@@ -37,6 +39,17 @@ local DEFAULT_SETTINGS = {
     afkThreshold = 5,     -- minutes without XP after which time stops counting
     dingSummary = true,
     silentPlayed = true,
+    sessionSummary = true,
+    goals = {
+        sessionXP = 0,    -- experience goal per session, 0 = off
+    },
+    alerts = {
+        rested = true,    -- the rested pool ran out
+        goals = true,     -- level or session goal reached
+        records = true,   -- a personal best was beaten
+        milestones = true, -- every 10 levels
+        sound = true,
+    },
     launcher = {
         shown = true,
         locked = false,
@@ -50,6 +63,7 @@ local DEFAULT_SETTINGS = {
         tab = "overview",
         range = "session",
         sourcesScope = "level",
+        runsMode = "runs",
     },
 }
 
@@ -196,5 +210,6 @@ function Database:ResetAll()
             ns.db.characters[key] = nil
         end
     end
+    ns.db.records = {}
     self:ResetCharacter(ns.charKey)
 end

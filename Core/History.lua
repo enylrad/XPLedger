@@ -26,6 +26,7 @@ local SAMPLE_INTERVAL = 60      -- at most one sample per minute
 local MAX_SAMPLES = 3000
 local PLAYED_TIMEOUT = 5        -- seconds to wait for TIME_PLAYED_MSG
 local DING_SUMMARY_DELAY = 1.5  -- lets the last gains of the level be committed
+local RECENT_LEVELS = 5          -- levels averaged by the recent pace
 
 local suppressedChatFrames = {}
 local playedRequestPending = false
@@ -227,6 +228,38 @@ function History:GetCharacterStats(record)
         stats.average = stats.totalPlayed / stats.completed
     end
     return stats
+end
+
+--- Recent pace of a record: the last completed level ({ level, played }),
+--- the average played of the levels before it and the average of the last
+--- `count` completed levels (5 by default). Any of them may be nil.
+function History:GetRecentPace(record, count)
+    count = count or RECENT_LEVELS
+    local levels = {}
+    for level in pairs(record.levels or {}) do
+        levels[#levels + 1] = level
+    end
+    table.sort(levels)
+
+    local completed = {}
+    for _, level in ipairs(levels) do
+        local entry = record.levels[level]
+        local played = entry.playedEnd and self:GetLevelPlayed(record, level)
+        if played then
+            completed[#completed + 1] = { level = level, played = played }
+        end
+    end
+    local last = completed[#completed]
+    local sum, previousCount = 0, 0
+    for i = #completed - 1, math.max(1, #completed - count), -1 do
+        sum, previousCount = sum + completed[i].played, previousCount + 1
+    end
+    local recentSum, recentCount = 0, 0
+    for i = #completed, math.max(1, #completed - count + 1), -1 do
+        recentSum, recentCount = recentSum + completed[i].played, recentCount + 1
+    end
+    return last, previousCount > 0 and sum / previousCount or nil,
+        recentCount > 0 and recentSum / recentCount or nil
 end
 
 --------------------------------------------------------------------------------
