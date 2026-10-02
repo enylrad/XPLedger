@@ -130,6 +130,7 @@ ns.Locales.enUS = {
     SCOPE_LEVEL = "Current level",
     SCOPE_ALL = "All tracked",
     SOURCES_EMPTY = "No experience recorded yet.",
+    SOURCES_COUNTS = "Kills: %s  ·  Quests: %s",
 
     -- Level up summary
     DING_SUMMARY = "Level %d reached in %s played (%s real time).",

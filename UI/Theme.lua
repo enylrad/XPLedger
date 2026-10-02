@@ -51,6 +51,13 @@ function Theme.Hex(color)
     return ("|cff%02x%02x%02x"):format(color[1] * 255, color[2] * 255, color[3] * 255)
 end
 
+--- Returns an inline color square usable inside any text ("|T...|t" escape).
+function Theme.Swatch(color, size)
+    size = size or 10
+    return ("|TInterface\\Buttons\\WHITE8X8:%d:%d:0:0:8:8:0:8:0:8:%d:%d:%d|t"):format(size, size,
+        color[1] * 255, color[2] * 255, color[3] * 255)
+end
+
 --------------------------------------------------------------------------------
 -- Primitives
 --------------------------------------------------------------------------------

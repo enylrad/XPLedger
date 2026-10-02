@@ -129,6 +129,7 @@ ns.Locales.esES = {
     SCOPE_LEVEL = "Nivel actual",
     SCOPE_ALL = "Todo lo registrado",
     SOURCES_EMPTY = "Todavía no hay experiencia registrada.",
+    SOURCES_COUNTS = "Muertes: %s  ·  Misiones: %s",
 
     -- Level up summary
     DING_SUMMARY = "¡Nivel %d alcanzado en %s jugado (%s de tiempo real)!",

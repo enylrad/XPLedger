@@ -34,5 +34,8 @@ UI\Launcher.lua
 UI\Graph.lua
 UI\MainPanel.lua
 UI\Views\Overview.lua
+UI\Views\Levels.lua
+UI\Views\Characters.lua
+UI\Views\Sources.lua
 
 XPLedger.lua
