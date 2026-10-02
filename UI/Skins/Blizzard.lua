@@ -339,6 +339,8 @@ function Skin:CreateStat(parent, label)
     tile.value = self:CreateText(tile, "value")
     tile.value:SetPoint("BOTTOMLEFT", 10, 9)
     tile.value:SetPoint("RIGHT", -8, 0)
+    tile.label:SetPoint("RIGHT", -8, 0)
+    self:AttachTileTooltip(tile)
     return tile
 end
 

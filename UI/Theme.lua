@@ -135,6 +135,46 @@ function Theme:CreateTexture(parent, color, layer, sublevel)
 end
 
 --------------------------------------------------------------------------------
+-- Stat tile tooltips
+--------------------------------------------------------------------------------
+
+--- Returns true when a font string does not fit in its width.
+local function IsTruncated(fontString)
+    if fontString.IsTruncated then
+        return fontString:IsTruncated()
+    end
+    local width = fontString:GetWidth()
+    return width > 0 and fontString:GetStringWidth() > width + 0.5
+end
+
+--- Gives a stat tile a hover tooltip. It shows the full label and value when
+--- either is cut off, and always shows `tile.tooltip(tooltip)` when a view
+--- sets it to add details.
+function Theme:AttachTileTooltip(tile)
+    tile:EnableMouse(true)
+    tile:SetScript("OnEnter", function(selfTile)
+        local truncated = IsTruncated(selfTile.label) or IsTruncated(selfTile.value)
+        if not truncated and not selfTile.tooltip then
+            return
+        end
+        GameTooltip:SetOwner(selfTile, "ANCHOR_TOP")
+        local accent = Theme.colors.accent
+        GameTooltip:AddLine(selfTile.label:GetText() or "", accent[1], accent[2], accent[3])
+        if selfTile.tooltip then
+            selfTile.tooltip(GameTooltip)
+        else
+            GameTooltip:AddLine(selfTile.value:GetText() or "", 1, 1, 1, true)
+        end
+        GameTooltip:Show()
+    end)
+    tile:SetScript("OnLeave", function(selfTile)
+        if GameTooltip:IsOwned(selfTile) then
+            GameTooltip:Hide()
+        end
+    end)
+end
+
+--------------------------------------------------------------------------------
 -- Localized texts (refreshed when the language changes at runtime)
 --------------------------------------------------------------------------------
 

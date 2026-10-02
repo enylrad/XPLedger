@@ -444,11 +444,23 @@ function Levels:RefreshTiles(record, compare)
         or L["DURATION_UNKNOWN"])
 
     local last, previousAverage, recentAverage = RecentPace(record)
+    tiles[3].tooltip = nil
     if last then
-        local text = ("%s · %s"):format(L["LEVEL_SHORT"]:format(last.level), ns.FormatDuration(last.played))
+        local text = ("%s·%s"):format(L["LEVEL_SHORT"]:format(last.level), ns.FormatDuration(last.played))
         if previousAverage and previousAverage > 0 then
             local change = (last.played / previousAverage - 1) * 100
-            text = ("%s %s(%+d%%)|r"):format(text, Theme.Hex(DiffColor(change)), math.floor(change + 0.5))
+            local color = Theme.Hex(DiffColor(change))
+            text = ("%s %s%+d%%|r"):format(text, color, math.floor(change + 0.5))
+            tiles[3].tooltip = function(tooltip)
+                local muted = Theme.colors.muted
+                tooltip:AddDoubleLine(L["LEVEL_SHORT"]:format(last.level), ns.FormatDuration(last.played),
+                    muted[1], muted[2], muted[3], 1, 1, 1)
+                tooltip:AddDoubleLine(L["LEVELS_PREVIOUS_AVG"], ns.FormatDuration(previousAverage),
+                    muted[1], muted[2], muted[3], 1, 1, 1)
+                tooltip:AddDoubleLine(L["LEVELS_COL_DIFF"], ("%s%s (%+d%%)|r"):format(color,
+                    FormatDiff(last.played - previousAverage), math.floor(change + 0.5)),
+                    muted[1], muted[2], muted[3], 1, 1, 1)
+            end
         end
         tiles[3].value:SetText(text)
     else
@@ -456,6 +468,7 @@ function Levels:RefreshTiles(record, compare)
     end
 
     tiles[4].label:SetText(compare and L["LEVELS_DIFF_TOTAL"] or L["LEVELS_RECENT_AVG"])
+    tiles[4].tooltip = nil
     if compare then
         local diff, common = 0, 0
         for _, level in ipairs(SortedLevels(record)) do
@@ -466,7 +479,14 @@ function Levels:RefreshTiles(record, compare)
         end
         if common > 0 then
             local key = diff <= 0 and "LEVELS_AHEAD" or "LEVELS_BEHIND"
-            tiles[4].value:SetText(Theme.Hex(DiffColor(diff)) .. L[key]:format(ns.FormatDuration(math.abs(diff))) .. "|r")
+            local text = Theme.Hex(DiffColor(diff)) .. L[key]:format(ns.FormatDuration(math.abs(diff))) .. "|r"
+            tiles[4].value:SetText(text)
+            tiles[4].tooltip = function(tooltip)
+                tooltip:AddLine(text, 1, 1, 1)
+                tooltip:AddLine(L["LEVELS_DIFF_TOTAL_DESC"]:format(common,
+                    ns.MainPanel.FormatCharacterName(compare)), Theme.colors.muted[1],
+                    Theme.colors.muted[2], Theme.colors.muted[3], true)
+            end
         else
             tiles[4].value:SetText(L["DURATION_UNKNOWN"])
         end
