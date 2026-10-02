@@ -1,0 +1,22 @@
+## Interface: 120100, 120105, 120007, 16001, 11509, 11508, 20506, 20505, 38002, 40402, 50504, 50503
+## Title: |cff4fc3f7XP|rLedger
+## Notes: Tracks your experience rate, estimates the time left to level up and keeps a leveling history for all your characters.
+## Notes-esES: Controla tu ritmo de experiencia, estima el tiempo que falta para subir de nivel y guarda el historial de subida de todos tus personajes.
+## Notes-esMX: Controla tu ritmo de experiencia, estima el tiempo que falta para subir de nivel y guarda el historial de subida de todos tus personajes.
+## Author: enylrad
+## Version: 0.1.0
+## Category: Quests
+## Category-enUS: Quests
+## Category-esES: Misiones
+## Category-esMX: Misiones
+## IconTexture: Interface\Icons\INV_Misc_Book_09
+## SavedVariables: XPLedgerDB
+## AddonCompartmentFunc: XPLedger_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: XPLedger_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: XPLedger_OnAddonCompartmentLeave
+
+Libs\embeds.xml
+
+Core\Core.lua
+
+XPLedger.lua
