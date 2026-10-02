@@ -26,5 +26,6 @@ Core\Compat.lua
 Core\Database.lua
 Core\Tracker.lua
 Core\Sources.lua
+Core\History.lua
 
 XPLedger.lua
