@@ -28,4 +28,8 @@ Core\Tracker.lua
 Core\Sources.lua
 Core\History.lua
 
+UI\Theme.lua
+UI\Tooltip.lua
+UI\Launcher.lua
+
 XPLedger.lua
