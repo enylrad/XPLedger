@@ -31,5 +31,8 @@ Core\History.lua
 UI\Theme.lua
 UI\Tooltip.lua
 UI\Launcher.lua
+UI\Graph.lua
+UI\MainPanel.lua
+UI\Views\Overview.lua
 
 XPLedger.lua

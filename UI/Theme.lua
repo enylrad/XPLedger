@@ -191,6 +191,66 @@ function Theme:CreateTab(parent, label, onClick)
     return tab
 end
 
+--- Creates a row of small toggle buttons where exactly one is selected.
+--- `options` is an array of { value = any, label = locale key }.
+function Theme:CreateSegmented(parent, options, getter, setter)
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetHeight(20)
+    holder.buttons = {}
+
+    function holder:Refresh()
+        local current = getter()
+        local width = 0
+        for _, button in ipairs(self.buttons) do
+            local selected = button.value == current
+            local color = selected and Theme.colors.accent or Theme.colors.muted
+            button.text:SetTextColor(color[1], color[2], color[3])
+            Theme:SetBorderColor(button, selected and Theme.colors.accent or Theme.colors.border,
+                selected and 0.6 or nil)
+            button:SetWidth(button.text:GetStringWidth() + 16)
+            width = width + button:GetWidth() + 2
+        end
+        self:SetWidth(math.max(1, width - 2))
+    end
+
+    local previous
+    for _, option in ipairs(options) do
+        local button = Theme:CreateButton(holder, option.label, 40, 20, function()
+            setter(option.value)
+            holder:Refresh()
+        end)
+        button.text:SetFont(Theme.FONT, 10, "")
+        button.value = option.value
+        if previous then
+            button:SetPoint("LEFT", previous, "RIGHT", 2, 0)
+        else
+            button:SetPoint("LEFT")
+        end
+        holder.buttons[#holder.buttons + 1] = button
+        previous = button
+    end
+
+    ns:RegisterMessage("XPL_LOCALE_CHANGED", function() holder:Refresh() end)
+    holder:Refresh()
+    return holder
+end
+
+--- Creates a stat tile: a small caption above a large value.
+function Theme:CreateStat(parent, label)
+    local tile = CreateFrame("Frame", nil, parent)
+    tile:SetHeight(46)
+    self:Skin(tile, self.colors.surface)
+
+    tile.label = self:CreateText(tile, 10, self.colors.muted)
+    tile.label:SetPoint("TOPLEFT", 10, -8)
+    self:SetLocalizedText(tile.label, label)
+
+    tile.value = self:CreateText(tile, 16)
+    tile.value:SetPoint("BOTTOMLEFT", 10, 8)
+    tile.value:SetPoint("RIGHT", -8, 0)
+    return tile
+end
+
 --------------------------------------------------------------------------------
 -- Checkbox
 --------------------------------------------------------------------------------
