@@ -221,6 +221,70 @@ function Theme:GetMenuBlocker()
 end
 
 --------------------------------------------------------------------------------
+-- Text dialog (copy and paste)
+--------------------------------------------------------------------------------
+
+local textDialog
+
+local function CreateTextDialog()
+    local dialog = Theme:CreatePanel(UIParent, "menu", "Frame", "XPLedgerTextDialog")
+    dialog:SetSize(560, 360)
+    dialog:SetPoint("CENTER")
+    dialog:SetFrameStrata("DIALOG")
+    dialog:SetToplevel(true)
+    dialog:SetClampedToScreen(true)
+    dialog:SetMovable(true)
+    dialog:EnableMouse(true)
+    dialog:RegisterForDrag("LeftButton")
+    dialog:SetScript("OnDragStart", dialog.StartMoving)
+    dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
+    dialog:Hide()
+    tinsert(UISpecialFrames, dialog:GetName())
+
+    dialog.title = Theme:CreateText(dialog, "heading")
+    dialog.title:SetPoint("TOPLEFT", 14, -12)
+
+    local close = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", -2, -2)
+
+    dialog.hint = Theme:CreateText(dialog, "muted")
+    dialog.hint:SetPoint("BOTTOMLEFT", 14, 12)
+    Theme:SetLocalizedText(dialog.hint, "EXPORT_HINT")
+
+    local scroll = CreateFrame("ScrollFrame", "XPLedgerTextDialogScroll", dialog, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 14, -36)
+    scroll:SetPoint("BOTTOMRIGHT", -32, 34)
+
+    local editBox = CreateFrame("EditBox", nil, scroll)
+    editBox:SetMultiLine(true)
+    editBox:SetAutoFocus(false)
+    editBox:SetFontObject(ChatFontNormal or GameFontHighlightSmall)
+    editBox:SetWidth(500)
+    editBox:SetScript("OnEscapePressed", function() dialog:Hide() end)
+    -- Read only: any edit restores the exported text.
+    editBox:SetScript("OnTextChanged", function(self, userInput)
+        if userInput then
+            self:SetText(dialog.text or "")
+            self:HighlightText()
+        end
+    end)
+    scroll:SetScrollChild(editBox)
+    dialog.editBox = editBox
+    return dialog
+end
+
+--- Shows a dialog with a read only text, selected so it can be copied.
+function Theme:ShowTextDialog(title, text)
+    textDialog = textDialog or CreateTextDialog()
+    textDialog.title:SetText(title)
+    textDialog.text = text
+    textDialog.editBox:SetText(text)
+    textDialog:Show()
+    textDialog.editBox:SetFocus()
+    textDialog.editBox:HighlightText()
+end
+
+--------------------------------------------------------------------------------
 -- Confirmation dialog
 --------------------------------------------------------------------------------
 

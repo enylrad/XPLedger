@@ -166,6 +166,11 @@ function Characters:Build(content)
         end)
     end)
     self.deleteButton:SetPoint("BOTTOMRIGHT", 0, 0)
+
+    local exportButton = Theme:CreateButton(content, "EXPORT_LEVELS", 100, 22, function()
+        ns.Export:Show("levels", ns.MainPanel:GetViewedKey())
+    end)
+    exportButton:SetPoint("BOTTOMRIGHT", -108, 0)
 end
 
 function Characters:Refresh()

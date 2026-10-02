@@ -33,6 +33,7 @@ Core\Runs.lua
 Core\Records.lua
 Core\Goals.lua
 Core\Sessions.lua
+Core\Export.lua
 
 UI\Theme.lua
 UI\Skins\Minimal.lua

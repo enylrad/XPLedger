@@ -178,6 +178,11 @@ function Runs:BuildRuns(content)
     self.footer = Theme:CreateText(content, "muted")
     self.footer:SetPoint("BOTTOMLEFT", 0, 6)
     Theme:SetLocalizedText(self.footer, "RUNS_HINT")
+
+    local exportButton = Theme:CreateButton(content, "EXPORT_RUNS", 100, 22, function()
+        ns.Export:Show("runs", ns.MainPanel:GetViewedKey())
+    end)
+    exportButton:SetPoint("BOTTOMRIGHT", 0, 0)
 end
 
 function Runs:RefreshTiles(record)

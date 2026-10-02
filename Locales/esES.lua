@@ -27,6 +27,7 @@ ns.Locales.esES = {
     HELP_GOAL_SESSION = "/xpl goal session <xp> - fija un objetivo de experiencia por sesión (0 lo desactiva)",
     HELP_GOAL_CLEAR = "/xpl goal clear - quita el objetivo de nivel (/xpl goal lo muestra)",
     HELP_SESSION = "/xpl session - resumen de la sesión actual",
+    HELP_EXPORT = "/xpl export [runs] - copia tus niveles (o instancias) en CSV",
     HELP_HELP = "/xpl help - muestra esta ayuda",
 
     -- Languages
@@ -214,6 +215,11 @@ ns.Locales.esES = {
     SESSION_VS_LAST = "(%+d%% frente a la anterior)",
     SESSION_RUNS = "%d instancias",
     SESSION_SOURCE = "sobre todo %s",
+    EXPORT_LEVELS = "Exportar",
+    EXPORT_RUNS = "Exportar",
+    EXPORT_LEVELS_TITLE = "Niveles de %s (CSV)",
+    EXPORT_RUNS_TITLE = "Instancias de %s (CSV)",
+    EXPORT_HINT = "Ctrl+C para copiar y pégalo en una hoja de cálculo. Escape cierra.",
     GOAL_NONE = "Sin objetivo de nivel. Fíjalo con /xpl goal <nivel> [días].",
     GOAL_STATUS = "Nivel %d: faltan %s niveles",
     GOAL_PLAYED_LEFT = "unas %s de juego",
