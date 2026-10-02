@@ -24,5 +24,6 @@ Locales\esES.lua
 Core\Locale.lua
 Core\Compat.lua
 Core\Database.lua
+Core\Tracker.lua
 
 XPLedger.lua
