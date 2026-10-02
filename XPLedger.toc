@@ -37,5 +37,6 @@ UI\Views\Overview.lua
 UI\Views\Levels.lua
 UI\Views\Characters.lua
 UI\Views\Sources.lua
+UI\Options.lua
 
 XPLedger.lua
