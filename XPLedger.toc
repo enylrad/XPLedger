@@ -38,5 +38,6 @@ UI\Views\Levels.lua
 UI\Views\Characters.lua
 UI\Views\Sources.lua
 UI\Options.lua
+UI\Broker.lua
 
 XPLedger.lua
