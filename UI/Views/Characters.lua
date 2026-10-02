@@ -54,14 +54,14 @@ function Characters:CreateRow(index)
     row:SetPoint("TOPLEFT", 0, -(index - 1) * ROW_HEIGHT)
     row:SetPoint("TOPRIGHT", 0, -(index - 1) * ROW_HEIGHT)
 
-    row.selectedTexture = Theme:CreateTexture(row, { Theme.colors.accent[1], Theme.colors.accent[2], Theme.colors.accent[3], 0.12 }, "BACKGROUND")
+    row.selectedTexture = Theme:CreateTexture(row, Theme.colors.selection, "BACKGROUND")
     row.selectedTexture:SetAllPoints()
     local highlight = Theme:CreateTexture(row, { 1, 1, 1, 0.05 }, "HIGHLIGHT")
     highlight:SetAllPoints()
 
     row.cells = {}
     for i, column in ipairs(COLUMNS) do
-        local cell = Theme:CreateText(row, 12, i == 1 and Theme.colors.text or Theme.colors.muted, column.justify)
+        local cell = Theme:CreateText(row, i == 1 and "normal" or "muted", column.justify)
         cell:SetPoint("LEFT", column.x, 0)
         cell:SetWidth(column.width)
         row.cells[i] = cell
@@ -80,7 +80,7 @@ function Characters:Build(content)
 
     -- Header.
     for _, column in ipairs(COLUMNS) do
-        local header = Theme:CreateText(content, 11, Theme.colors.muted, column.justify)
+        local header = Theme:CreateText(content, "label", column.justify)
         header:SetPoint("TOPLEFT", column.x, -4)
         header:SetWidth(column.width)
         Theme:SetLocalizedText(header, column.key)
@@ -107,7 +107,7 @@ function Characters:Build(content)
     end
 
     -- Footer.
-    local hint = Theme:CreateText(content, 11, Theme.colors.muted)
+    local hint = Theme:CreateText(content, "muted")
     hint:SetPoint("BOTTOMLEFT", 0, 6)
     Theme:SetLocalizedText(hint, "CHAR_HINT")
 
@@ -140,7 +140,7 @@ function Characters:Refresh()
             local name = ns.MainPanel.FormatCharacterName(record)
             local suffix = record.realm and (" |cff8a8f99- " .. record.realm .. "|r") or ""
             if entry.key == ns.charKey then
-                suffix = suffix .. " |cff4fc3f7(" .. L["CHAR_CURRENT"] .. ")|r"
+                suffix = suffix .. " " .. Theme.Hex(Theme.colors.accent) .. "(" .. L["CHAR_CURRENT"] .. ")|r"
             end
             row.key = entry.key
             row.cells[1]:SetText(name .. suffix)

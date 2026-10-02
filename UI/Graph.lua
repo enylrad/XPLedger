@@ -110,7 +110,7 @@ function Graph:Create(parent)
     frame.plot:SetPoint("BOTTOMRIGHT", -PADDING_RIGHT, PADDING_BOTTOM)
     frame.plot:EnableMouse(true)
 
-    frame.emptyText = Theme:CreateText(frame, 12, Theme.colors.muted, "CENTER")
+    frame.emptyText = Theme:CreateText(frame, "muted", "CENTER")
     frame.emptyText:SetPoint("CENTER", frame.plot)
 
     -- Hover marker (line graphs) and highlight (bar graphs).
@@ -142,13 +142,10 @@ function GraphMixin:SetData(data)
     self:Render()
 end
 
-function GraphMixin:Label(text, size, color, justify)
+function GraphMixin:Label(text, justify)
     local label = Acquire(self, "labels", function()
-        return Theme:CreateText(self, 10, Theme.colors.muted)
+        return Theme:CreateText(self, "small")
     end)
-    label:SetFont(Theme.FONT, size or 10, "")
-    color = color or Theme.colors.muted
-    label:SetTextColor(color[1], color[2], color[3], color[4] or 1)
     label:SetJustifyH(justify or "LEFT")
     label:ClearAllPoints()
     label:SetText(text)
@@ -222,7 +219,7 @@ function GraphMixin:RenderGrid(yMin, yMax, step, height, formatter)
         line:SetPoint("BOTTOMRIGHT", self.plot, "BOTTOMRIGHT", 0, y)
         line:SetHeight(1)
 
-        local label = self:Label(formatter(value), 10, Theme.colors.muted, "RIGHT")
+        local label = self:Label(formatter(value), "RIGHT")
         label:SetPoint("RIGHT", self.plot, "BOTTOMLEFT", -6, y)
         value = value + step
     end
@@ -286,7 +283,7 @@ function GraphMixin:RenderLines(width, height)
     for i = 0, 2 do
         local xValue = xMin + (xMax - xMin) * i / 2
         local justify = i == 0 and "LEFT" or (i == 2 and "RIGHT" or "CENTER")
-        local label = self:Label(formatter(xValue), 10, Theme.colors.muted, justify)
+        local label = self:Label(formatter(xValue), justify)
         local anchor = i == 0 and "TOPLEFT" or (i == 2 and "TOPRIGHT" or "TOP")
         label:SetPoint(anchor, self.plot, "BOTTOMLEFT", width * i / 2, -5)
     end
@@ -333,7 +330,7 @@ function GraphMixin:RenderBars(width, height)
             end
         end
         if (index - 1) % labelEvery == 0 then
-            local label = self:Label(group.label, 10, Theme.colors.muted, "CENTER")
+            local label = self:Label(group.label, "CENTER")
             label:SetPoint("TOP", self.plot, "BOTTOMLEFT", (index - 0.5) * slot, -5)
         end
         self.barSlots[index] = { left = (index - 1) * slot, width = slot, group = group }

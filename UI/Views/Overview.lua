@@ -122,7 +122,7 @@ function Overview:Build(content)
         self.tiles[index] = tile
     end
 
-    local progressTitle = Theme:CreateText(content, 12)
+    local progressTitle = Theme:CreateText(content, "heading")
     progressTitle:SetPoint("TOPLEFT", 0, -62)
     Theme:SetLocalizedText(progressTitle, "GRAPH_PROGRESS_TITLE")
 
@@ -139,7 +139,7 @@ function Overview:Build(content)
     self.progressGraph:SetPoint("TOPRIGHT", 0, -82)
     self.progressGraph:SetHeight(140)
 
-    self.rateTitle = Theme:CreateText(content, 12)
+    self.rateTitle = Theme:CreateText(content, "heading")
     self.rateTitle:SetPoint("TOPLEFT", 0, -232)
 
     self.rateGraph = ns.Graph:Create(content)

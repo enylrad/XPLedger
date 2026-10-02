@@ -29,6 +29,7 @@ Core\Sources.lua
 Core\History.lua
 
 UI\Theme.lua
+UI\Skins\Minimal.lua
 UI\Tooltip.lua
 UI\Launcher.lua
 UI\Graph.lua

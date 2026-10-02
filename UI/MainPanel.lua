@@ -20,7 +20,8 @@ local _, ns = ...
 local MainPanel = ns:NewModule("MainPanel")
 local Theme = ns.Theme
 
-local WIDTH, HEIGHT = 640, 440
+-- Size of the area handed to the views; the skin builds the window around it.
+local CONTENT_WIDTH, CONTENT_HEIGHT = 612, 354
 local REFRESH_THROTTLE = 0.5
 
 MainPanel.views = {}
@@ -70,9 +71,14 @@ end
 -- Frame construction
 --------------------------------------------------------------------------------
 
+local function PlayWindowSound(kit)
+    if PlaySound and SOUNDKIT and SOUNDKIT[kit] then
+        PlaySound(SOUNDKIT[kit])
+    end
+end
+
 function MainPanel:Build()
-    local frame = CreateFrame("Frame", "XPLedgerMainPanel", UIParent)
-    frame:SetSize(WIDTH, HEIGHT)
+    local frame = Theme:CreateWindow("XPLedgerMainPanel", CONTENT_WIDTH, CONTENT_HEIGHT)
     frame:SetFrameStrata("HIGH")
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
@@ -88,59 +94,38 @@ function MainPanel:Build()
         local point, _, relativePoint, x, y = selfFrame:GetPoint(1)
         ns.settings.panel.position = { point, relativePoint, ns.Round(x, 1), ns.Round(y, 1) }
     end)
-    Theme:Skin(frame, { 0.05, 0.06, 0.08, 0.96 }, { 1, 1, 1, 0.10 })
     frame:Hide()
 
     -- Close with Escape.
     tinsert(UISpecialFrames, frame:GetName())
 
-    local title = Theme:CreateText(frame, 15)
-    title:SetPoint("TOPLEFT", 14, -12)
-    title:SetText(Theme.Hex(Theme.colors.accent) .. "XP|rLedger")
-
-    frame.subtitle = Theme:CreateText(frame, 11, Theme.colors.muted)
-    frame.subtitle:SetPoint("LEFT", title, "RIGHT", 10, -1)
-
-    local close = CreateFrame("Button", nil, frame)
-    close:SetSize(22, 22)
-    close:SetPoint("TOPRIGHT", -8, -8)
-    close.text = Theme:CreateText(close, 16, Theme.colors.muted, "CENTER")
-    close.text:SetPoint("CENTER")
-    close.text:SetText("×")
-    close:SetScript("OnEnter", function() close.text:SetTextColor(1, 1, 1) end)
-    close:SetScript("OnLeave", function()
-        close.text:SetTextColor(Theme.colors.muted[1], Theme.colors.muted[2], Theme.colors.muted[3])
-    end)
-    close:SetScript("OnClick", function() frame:Hide() end)
-
     -- Tabs.
     frame.tabs = {}
     local previous
     for _, view in ipairs(self.views) do
-        local tab = Theme:CreateTab(frame, view.label, function() self:SelectView(view.id) end)
-        if previous then
-            tab:SetPoint("LEFT", previous, "RIGHT", 4, 0)
-        else
-            tab:SetPoint("TOPLEFT", 10, -38)
-        end
+        local tab = Theme:CreateTab(frame, view.label, function()
+            PlayWindowSound("IG_CHARACTER_INFO_TAB")
+            self:SelectView(view.id)
+        end)
+        Theme:PlaceTab(frame, tab, previous)
         tab.view = view
         frame.tabs[view.id] = tab
         previous = tab
     end
 
-    local separator = Theme:CreateTexture(frame, Theme.colors.border)
-    separator:SetPoint("TOPLEFT", 1, -62)
-    separator:SetPoint("TOPRIGHT", -1, -62)
-    separator:SetHeight(1)
-
     -- One content frame per view, created when the view is first shown.
     frame.contents = {}
 
-    frame:SetScript("OnShow", function()
+    -- Hooked rather than set: native window templates have their own scripts.
+    frame:HookScript("OnShow", function()
+        PlayWindowSound("IG_CHARACTER_INFO_OPEN")
         self:UpdateHeader()
         self:Refresh()
     end)
-    frame:SetScript("OnHide", function() Theme:CloseMenus() end)
+    frame:HookScript("OnHide", function()
+        PlayWindowSound("IG_CHARACTER_INFO_CLOSE")
+        Theme:CloseMenus()
+    end)
 
     self.frame = frame
     self:ApplyPosition()
@@ -195,9 +180,8 @@ function MainPanel:SelectView(id)
 
     local content = frame.contents[view.id]
     if not content then
-        content = CreateFrame("Frame", nil, frame)
-        content:SetPoint("TOPLEFT", 14, -72)
-        content:SetPoint("BOTTOMRIGHT", -14, 14)
+        content = CreateFrame("Frame", nil, frame.contentArea)
+        content:SetAllPoints(frame.contentArea)
         view:Build(content)
         frame.contents[view.id] = content
     end

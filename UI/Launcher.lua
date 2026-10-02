@@ -14,9 +14,6 @@ local _, ns = ...
 local Launcher = ns:NewModule("Launcher")
 local Theme = ns.Theme
 
-local WIDTH, HEIGHT = 172, 38
-local BOX_SIZE = HEIGHT
-local BAR_HEIGHT = 3
 local DEFAULT_POSITION = { "CENTER", "CENTER", 0, -220 }
 
 --------------------------------------------------------------------------------
@@ -51,8 +48,10 @@ end
 --------------------------------------------------------------------------------
 
 function Launcher:Build()
-    local frame = CreateFrame("Button", "XPLedgerLauncher", UIParent)
-    frame:SetSize(WIDTH, HEIGHT)
+    local metrics = Theme.metrics.launcher
+    local inset = metrics.inset
+    local frame = Theme:CreatePanel(UIParent, "launcher", "Button", "XPLedgerLauncher")
+    frame:SetSize(metrics.width, metrics.height)
     frame:SetFrameStrata("MEDIUM")
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
@@ -63,39 +62,30 @@ function Launcher:Build()
     frame:EnableMouse(true)
     frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     frame:RegisterForDrag("LeftButton")
-    Theme:Skin(frame)
 
-    -- Level box on the left.
+    -- Experience bar along the bottom edge (inside the skin's border).
+    frame.xpBar = Theme:CreateXPBar(frame)
+    frame.xpBar:SetPoint("BOTTOMLEFT", inset + 1, inset + 1)
+    frame.xpBar:SetPoint("BOTTOMRIGHT", -inset - 1, inset + 1)
+
+    -- Level box on the left, above the bar.
+    local boxSize = metrics.height - inset * 2 - metrics.barHeight - 3
     local box = CreateFrame("Frame", nil, frame)
-    box:SetPoint("TOPLEFT")
-    box:SetSize(BOX_SIZE, BOX_SIZE)
-    local boxBackground = Theme:CreateTexture(box, { Theme.colors.accent[1], Theme.colors.accent[2], Theme.colors.accent[3], 0.14 }, "BACKGROUND", -7)
+    box:SetPoint("TOPLEFT", inset + 1, -inset - 1)
+    box:SetSize(boxSize, boxSize)
+    local boxBackground = Theme:CreateTexture(box, Theme.colors.levelBox, "BACKGROUND", 7)
     boxBackground:SetAllPoints()
-    frame.levelText = Theme:CreateText(box, 15, Theme.colors.text, "CENTER")
-    frame.levelText:SetPoint("CENTER", 0, 1)
+    frame.levelText = Theme:CreateText(box, "title", "CENTER")
+    frame.levelText:SetPoint("CENTER")
 
     -- Texts on the right.
-    frame.primaryText = Theme:CreateText(frame, 13, Theme.colors.text)
-    frame.primaryText:SetPoint("TOPLEFT", box, "TOPRIGHT", 9, -6)
-    frame.primaryText:SetPoint("RIGHT", -8, 0)
+    frame.primaryText = Theme:CreateText(frame, "normal")
+    frame.primaryText:SetPoint("TOPLEFT", box, "TOPRIGHT", 8, -4)
+    frame.primaryText:SetPoint("RIGHT", -inset - 6, 0)
 
-    frame.secondaryText = Theme:CreateText(frame, 10, Theme.colors.muted)
+    frame.secondaryText = Theme:CreateText(frame, "small")
     frame.secondaryText:SetPoint("TOPLEFT", frame.primaryText, "BOTTOMLEFT", 0, -3)
-    frame.secondaryText:SetPoint("RIGHT", -8, 0)
-
-    -- Experience bar along the bottom edge.
-    local track = Theme:CreateTexture(frame, Theme.colors.track, "ARTWORK", 0)
-    track:SetPoint("BOTTOMLEFT", 1, 1)
-    track:SetPoint("BOTTOMRIGHT", -1, 1)
-    track:SetHeight(BAR_HEIGHT)
-    frame.barTrack = track
-
-    frame.restedBar = Theme:CreateTexture(frame, { Theme.colors.rested[1], Theme.colors.rested[2], Theme.colors.rested[3], 0.55 }, "ARTWORK", 1)
-    frame.restedBar:SetHeight(BAR_HEIGHT)
-
-    frame.xpBar = Theme:CreateTexture(frame, Theme.colors.accent, "ARTWORK", 2)
-    frame.xpBar:SetPoint("BOTTOMLEFT", track, "BOTTOMLEFT")
-    frame.xpBar:SetHeight(BAR_HEIGHT)
+    frame.secondaryText:SetPoint("RIGHT", -inset - 6, 0)
 
     -- Short border flash used as feedback when the lock state changes.
     local flash = frame:CreateAnimationGroup()
@@ -141,7 +131,7 @@ function Launcher:SetupScripts(frame)
         end
     end)
     frame:SetScript("OnEnter", function(selfFrame)
-        Theme:SetBorderColor(selfFrame, Theme.colors.accent, 0.5)
+        Theme:SetHighlight(selfFrame, true)
         GameTooltip:SetOwner(selfFrame, "ANCHOR_NONE")
         GameTooltip:SetPoint(Launcher:GetTooltipAnchor())
         ns.SummaryTooltip:Fill(GameTooltip, true)
@@ -149,7 +139,7 @@ function Launcher:SetupScripts(frame)
         selfFrame.hovered = true
     end)
     frame:SetScript("OnLeave", function(selfFrame)
-        Theme:SetBorderColor(selfFrame, Theme.colors.border)
+        Theme:SetHighlight(selfFrame, false)
         GameTooltip:Hide()
         selfFrame.hovered = false
     end)
@@ -273,18 +263,9 @@ function Launcher:Update()
     frame.primaryText:SetText(primary)
     frame.secondaryText:SetText(secondary)
 
-    local width = frame.barTrack:GetWidth()
-    if width and width > 0 then
-        local progress = ns.Clamp(estimate.progress, 0, 1)
-        local restedEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + estimate.rested) / estimate.maxXP, 0, 1) or 0
-        frame.xpBar:SetWidth(math.max(1, width * progress))
-        frame.xpBar:SetShown(progress > 0)
-
-        frame.restedBar:ClearAllPoints()
-        frame.restedBar:SetPoint("BOTTOMLEFT", frame.barTrack, "BOTTOMLEFT", width * progress, 0)
-        frame.restedBar:SetWidth(math.max(1, width * (restedEnd - progress)))
-        frame.restedBar:SetShown(restedEnd > progress)
-    end
+    local progress = ns.Clamp(estimate.progress, 0, 1)
+    local restedEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + estimate.rested) / estimate.maxXP, 0, 1) or 0
+    frame.xpBar:SetProgress(progress, math.max(progress, restedEnd))
 
     if frame.hovered and GameTooltip:IsOwned(frame) then
         GameTooltip:ClearLines()

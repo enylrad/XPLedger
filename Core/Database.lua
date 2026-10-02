@@ -30,6 +30,7 @@ local SCHEMA_VERSION = 1
 
 local DEFAULT_SETTINGS = {
     locale = "auto",
+    style = "blizzard",   -- interface skin: "blizzard" (native) or "minimal"
     rateWindow = 15,      -- minutes used by the rolling XP/hour rate
     afkThreshold = 5,     -- minutes without XP after which time stops counting
     dingSummary = true,
@@ -81,6 +82,8 @@ function Database:OnInitialize()
     ns.db = db
     ns.settings = db.settings
     ns:SetLocale(db.settings.locale)
+    -- The skin must be active before any frame is created (PLAYER_LOGIN).
+    ns.Theme:Init(db.settings.style)
 end
 
 function Database:OnLogin()

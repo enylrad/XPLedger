@@ -76,7 +76,7 @@ end
 function Levels:Build(content)
     self.content = content
 
-    local title = Theme:CreateText(content, 12)
+    local title = Theme:CreateText(content, "heading")
     title:SetPoint("TOPLEFT", 0, -4)
     Theme:SetLocalizedText(title, "LEVELS_TITLE")
 
@@ -99,11 +99,11 @@ function Levels:Build(content)
     end)
     self.compareDropdown:SetPoint("TOPRIGHT", 0, 0)
 
-    local compareLabel = Theme:CreateText(content, 11, Theme.colors.muted, "RIGHT")
+    local compareLabel = Theme:CreateText(content, "label", "RIGHT")
     compareLabel:SetPoint("RIGHT", self.compareDropdown, "LEFT", -8, 0)
     Theme:SetLocalizedText(compareLabel, "LEVELS_COMPARE")
 
-    self.legend = Theme:CreateText(content, 11, Theme.colors.muted)
+    self.legend = Theme:CreateText(content, "muted")
     self.legend:SetPoint("TOPLEFT", 0, -22)
 
     self.graph = ns.Graph:Create(content)

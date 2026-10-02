@@ -31,7 +31,7 @@ local function CreateColumn(parent, titleKey, buckets, colors, labelPrefix)
     column:SetWidth(COLUMN_WIDTH)
     column:SetHeight(60 + #buckets * ROW_HEIGHT)
 
-    local title = Theme:CreateText(column, 12)
+    local title = Theme:CreateText(column, "heading")
     title:SetPoint("TOPLEFT")
     Theme:SetLocalizedText(title, titleKey)
 
@@ -52,13 +52,13 @@ local function CreateColumn(parent, titleKey, buckets, colors, labelPrefix)
         local top = -46 - (i - 1) * ROW_HEIGHT
         local row = {}
 
-        row.label = Theme:CreateText(column, 12)
+        row.label = Theme:CreateText(column, "normal")
         row.label:SetPoint("TOPLEFT", 0, top)
         Theme:SetLocalizedText(row.label, function()
             return Theme.Swatch(color, 9) .. "  " .. L[labelPrefix .. bucket]
         end)
 
-        row.value = Theme:CreateText(column, 11, Theme.colors.muted, "RIGHT")
+        row.value = Theme:CreateText(column, "muted", "RIGHT")
         row.value:SetPoint("TOPRIGHT", 0, top)
 
         local track = Theme:CreateTexture(column, Theme.colors.track, "BACKGROUND")
@@ -72,7 +72,7 @@ local function CreateColumn(parent, titleKey, buckets, colors, labelPrefix)
         column.rows[i] = row
     end
 
-    column.empty = Theme:CreateText(column, 11, Theme.colors.muted)
+    column.empty = Theme:CreateText(column, "muted")
     column.empty:SetPoint("TOPLEFT", 0, -46)
 
     --- Fills the column with an { [bucket] = xp } map.
@@ -115,7 +115,7 @@ end
 function Sources:Build(content)
     self.content = content
 
-    self.counts = Theme:CreateText(content, 11, Theme.colors.muted)
+    self.counts = Theme:CreateText(content, "muted")
     self.counts:SetPoint("TOPLEFT", 0, -4)
 
     self.scope = Theme:CreateSegmented(content, SCOPES,
