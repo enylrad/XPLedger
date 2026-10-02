@@ -119,6 +119,12 @@ function Compat.GetRestedExperience()
     return ns.SafeNumber(GetXPExhaustion and GetXPExhaustion()) or 0
 end
 
+--- Returns true while the character is in an inn or a city (secret-safe).
+function Compat.IsResting()
+    local resting = IsResting and IsResting()
+    return not ns.IsSecret(resting) and resting == true
+end
+
 --- Returns true when the character cannot gain experience at all.
 function Compat.IsExperienceBlocked()
     if IsXPUserDisabled and IsXPUserDisabled() then

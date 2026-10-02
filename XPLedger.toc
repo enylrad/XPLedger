@@ -27,6 +27,7 @@ Core\Database.lua
 Core\Tracker.lua
 Core\Sources.lua
 Core\History.lua
+Core\Rested.lua
 
 UI\Theme.lua
 UI\Skins\Minimal.lua

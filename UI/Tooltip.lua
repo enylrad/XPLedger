@@ -43,6 +43,10 @@ function SummaryTooltip:Fill(tooltip, hints)
             Row(L["TOOLTIP_RESTED"], ("%s (%.0f%%)"):format(ns.FormatInteger(estimate.rested),
                 Percent(estimate.rested, estimate.maxXP)))
         end
+        local _, _, fullIn, resting = ns.Rested:Estimate(ns.char)
+        if resting and fullIn then
+            Row(L["RESTED_FULL_IN"], fullIn == 0 and L["RESTED_FULL"] or ns.FormatDuration(fullIn))
+        end
 
         tooltip:AddLine(" ")
         local window = L["WINDOW_LAST_MINUTES"]:format(estimate.windowMinutes)

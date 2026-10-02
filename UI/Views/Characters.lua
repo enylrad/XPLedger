@@ -16,12 +16,15 @@ local VISIBLE_ROWS = 11
 
 -- Column layout: locale key of the header, x offset, width and justification.
 local COLUMNS = {
-    { key = "CHAR_COL_NAME", x = 8, width = 230, justify = "LEFT" },
-    { key = "CHAR_COL_LEVEL", x = 244, width = 50, justify = "CENTER" },
-    { key = "CHAR_COL_PLAYED", x = 300, width = 100, justify = "RIGHT" },
-    { key = "CHAR_COL_AVG", x = 406, width = 96, justify = "RIGHT" },
+    { key = "CHAR_COL_NAME", x = 8, width = 184, justify = "LEFT" },
+    { key = "CHAR_COL_LEVEL", x = 196, width = 40, justify = "CENTER" },
+    { key = "CHAR_COL_PLAYED", x = 240, width = 90, justify = "RIGHT" },
+    { key = "CHAR_COL_AVG", x = 334, width = 86, justify = "RIGHT" },
+    { key = "CHAR_COL_RESTED", x = 424, width = 80, justify = "RIGHT" },
     { key = "CHAR_COL_SEEN", x = 508, width = 96, justify = "RIGHT" },
 }
+local RESTED_COLUMN = 5
+local SEEN_COLUMN = 6
 
 --------------------------------------------------------------------------------
 -- Row data
@@ -35,6 +38,43 @@ local function FormatLastSeen(record)
         return L["DURATION_UNKNOWN"]
     end
     return L["CHAR_SEEN_AGO"]:format(ns.FormatDuration(time() - record.lastSeen))
+end
+
+--- Rested pool as a percentage of the level bar, colored like the rested bar.
+local function FormatRested(record)
+    local pool, fraction = ns.Rested:Estimate(record)
+    if not pool then
+        return L["DURATION_UNKNOWN"]
+    end
+    local text = ("%d%%"):format(math.floor(fraction * 100 + 0.5))
+    if fraction >= 1.5 then
+        return Theme.Hex(Theme.colors.rested) .. text .. "|r"
+    end
+    return text
+end
+
+local function ShowRowTooltip(row)
+    local record = row.key and ns.db.characters[row.key]
+    if not record then
+        return
+    end
+    local muted = Theme.colors.muted
+    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(ns.MainPanel.FormatCharacterName(record, true))
+    local pool, fraction, fullIn, resting = ns.Rested:Estimate(record)
+    if pool then
+        GameTooltip:AddDoubleLine(L["TOOLTIP_RESTED"], ("%s (%d%%)"):format(ns.FormatInteger(pool),
+            math.floor(fraction * 100 + 0.5)), muted[1], muted[2], muted[3], 1, 1, 1)
+        GameTooltip:AddDoubleLine(L["RESTED_FULL_IN"], fullIn == 0 and L["RESTED_FULL"] or ns.FormatDuration(fullIn),
+            muted[1], muted[2], muted[3], 1, 1, 1)
+        GameTooltip:AddLine(resting and L["RESTED_IN_INN"] or L["RESTED_OUTSIDE"], muted[1], muted[2], muted[3], true)
+        if record ~= ns.char then
+            GameTooltip:AddLine(L["RESTED_ESTIMATED"], muted[1], muted[2], muted[3], true)
+        end
+    else
+        GameTooltip:AddLine(L["RESTED_UNKNOWN"], muted[1], muted[2], muted[3], true)
+    end
+    GameTooltip:Show()
 end
 
 local function GetPlayed(record)
@@ -67,6 +107,8 @@ function Characters:CreateRow(index)
         row.cells[i] = cell
     end
 
+    row:SetScript("OnEnter", ShowRowTooltip)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     row:SetScript("OnClick", function(selfRow)
         ns.MainPanel:SetViewedKey(selfRow.key)
         self:Refresh()
@@ -147,7 +189,8 @@ function Characters:Refresh()
             row.cells[2]:SetText(record.level or "?")
             row.cells[3]:SetText(ns.FormatDuration(GetPlayed(record)))
             row.cells[4]:SetText(ns.FormatDuration(stats.average))
-            row.cells[5]:SetText(FormatLastSeen(record))
+            row.cells[RESTED_COLUMN]:SetText(FormatRested(record))
+            row.cells[SEEN_COLUMN]:SetText(FormatLastSeen(record))
             row.selectedTexture:SetShown(entry.key == viewedKey)
             row:Show()
         else
