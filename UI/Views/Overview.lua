@@ -122,8 +122,13 @@ function Overview:Build(content)
         self.tiles[index] = tile
     end
 
+    -- Actions left to level up, under the tiles.
+    self.actions = Theme:CreateText(content, "muted")
+    self.actions:SetPoint("TOPLEFT", 2, -54)
+    self.actions:SetPoint("RIGHT", 0, 0)
+
     local progressTitle = Theme:CreateText(content, "heading")
-    progressTitle:SetPoint("TOPLEFT", 0, -62)
+    progressTitle:SetPoint("TOPLEFT", 0, -76)
     Theme:SetLocalizedText(progressTitle, "GRAPH_PROGRESS_TITLE")
 
     self.range = Theme:CreateSegmented(content, RANGES,
@@ -132,12 +137,12 @@ function Overview:Build(content)
             ns.settings.panel.range = value
             self:RefreshGraphs()
         end)
-    self.range:SetPoint("TOPRIGHT", 0, -58)
+    self.range:SetPoint("TOPRIGHT", 0, -72)
 
     self.progressGraph = ns.Graph:Create(content)
-    self.progressGraph:SetPoint("TOPLEFT", 0, -82)
-    self.progressGraph:SetPoint("TOPRIGHT", 0, -82)
-    self.progressGraph:SetHeight(140)
+    self.progressGraph:SetPoint("TOPLEFT", 0, -96)
+    self.progressGraph:SetPoint("TOPRIGHT", 0, -96)
+    self.progressGraph:SetHeight(126)
 
     self.rateTitle = Theme:CreateText(content, "heading")
     self.rateTitle:SetPoint("TOPLEFT", 0, -232)
@@ -158,6 +163,27 @@ function Overview:RefreshStats()
     end
     self.tiles[3].value:SetText(ns.FormatInteger(estimate.sessionXP))
     self.tiles[4].value:SetText(ns.FormatDuration(estimate.sessionTime))
+    self.actions:SetText(self:FormatActions(estimate))
+end
+
+--- "About 42 kills · 6 quests · 2 runs to level up", or an empty string.
+function Overview:FormatActions(estimate)
+    if estimate.atMaxLevel or estimate.blocked then
+        return ""
+    end
+    local parts = {}
+    local function Add(count, key)
+        if count then
+            parts[#parts + 1] = L[key]:format(ns.FormatInteger(count))
+        end
+    end
+    Add(estimate.killsToLevel, "ACTIONS_KILLS")
+    Add(estimate.questsToLevel, "ACTIONS_QUESTS")
+    Add(estimate.runsToLevel, "ACTIONS_RUNS")
+    if #parts == 0 then
+        return ""
+    end
+    return L["ACTIONS_TO_LEVEL"]:format(table.concat(parts, "  ·  "))
 end
 
 function Overview:RefreshGraphs()

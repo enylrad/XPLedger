@@ -70,6 +70,9 @@ function SummaryTooltip:Fill(tooltip, hints)
         if estimate.questsToLevel then
             Row(L["TOOLTIP_QUESTS_TO_LEVEL"], ns.FormatInteger(estimate.questsToLevel))
         end
+        if estimate.runsToLevel then
+            Row(L["TOOLTIP_RUNS_TO_LEVEL"], ns.FormatInteger(estimate.runsToLevel))
+        end
         if not estimate.eta then
             tooltip:AddLine(L["TOOLTIP_NO_DATA"], muted[1], muted[2], muted[3], true)
         elseif estimate.idle then

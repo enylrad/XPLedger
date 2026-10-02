@@ -379,13 +379,35 @@ function Tracker:GetEstimate()
         estimate.eta = estimate.remaining / rate * 3600
     end
 
-    local averageKill = Average(session.recentKills)
-    local averageQuest = Average(session.recentQuests)
+    -- Average reward per action: this session first, then the level history.
+    local averageKill = Average(session.recentKills) or self:GetHistoryAverage(estimate.level, "mob", "kills")
+    local averageQuest = Average(session.recentQuests) or self:GetHistoryAverage(estimate.level, "quest", "quests")
     if averageKill and averageKill > 0 then
         estimate.killsToLevel = math.ceil(estimate.remaining / averageKill)
     end
     if averageQuest and averageQuest > 0 then
         estimate.questsToLevel = math.ceil(estimate.remaining / averageQuest)
     end
+    if ns.Runs then
+        local runs = ns.Runs:GetStats(ns.char, estimate.level)
+        if runs.averageXP and runs.averageXP > 0 then
+            estimate.runsToLevel = math.ceil(estimate.remaining / runs.averageXP)
+        end
+    end
     return estimate
+end
+
+--- Average experience per kill or per quest recorded on the current level,
+--- or on the previous one when the current level has none yet.
+function Tracker:GetHistoryAverage(level, source, counter)
+    local levels = ns.char.levels
+    for _, candidate in ipairs({ level, level - 1 }) do
+        local entry = levels[candidate]
+        local count = entry and entry[counter] or 0
+        local xp = entry and entry.sources and entry.sources[source] or 0
+        if count > 0 and xp > 0 then
+            return xp / count
+        end
+    end
+    return nil
 end
