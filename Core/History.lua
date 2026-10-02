@@ -285,6 +285,16 @@ local function TopEntry(map)
     return bestKey, bestValue, total
 end
 
+--- Returns the source that gave the most experience on a level entry and its
+--- share of the level (0-1), or nil when nothing was recorded.
+function History:GetTopSource(entry)
+    local source, amount, total = TopEntry(entry and entry.sources)
+    if source and total > 0 then
+        return source, amount / total
+    end
+    return nil
+end
+
 function History:PrintLevelSummary(oldLevel, newLevel)
     local L = ns.L
     local record = ns.char.levels[oldLevel]
@@ -296,10 +306,10 @@ function History:PrintLevelSummary(oldLevel, newLevel)
         and (record.endedAt - record.startedAt) or nil
     ns:Print(L["DING_SUMMARY"], newLevel, ns.FormatDuration(played), ns.FormatDuration(realTime))
 
-    local source, amount, total = TopEntry(record.sources)
+    local source, share = self:GetTopSource(record)
     local context = TopEntry(record.contexts)
-    if source and total > 0 then
-        ns:Print(L["DING_MAIN_SOURCE"], L["SOURCE_" .. source], math.floor(amount / total * 100 + 0.5),
+    if source then
+        ns:Print(L["DING_MAIN_SOURCE"], L["SOURCE_" .. source], math.floor(share * 100 + 0.5),
             L["CONTEXT_" .. (context or "world")])
     end
 end

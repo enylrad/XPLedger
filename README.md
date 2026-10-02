@@ -16,8 +16,9 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
 - **Main window**
   - *Overview*: XP/hour, time to level, session XP and time, level progress over time
     (session, 24 hours, 7 days or all) and the XP/hour of the session in time blocks.
-  - *Levels*: played time per level, with a side-by-side comparison against another
-    character, plus total, average, fastest and slowest level.
+  - *Levels*: cumulative played time line (optionally compared against another
+    character), a per-level table (played, real time, XP, main source, difference)
+    and tiles for total, current level, recent pace and comparison.
   - *Characters*: every tracked character with level, played time, average time per
     level and when it was last seen.
   - *Sources*: experience by source (monsters, quests, exploration, pet battles, other)

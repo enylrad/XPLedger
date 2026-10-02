@@ -26,6 +26,8 @@ Skin.palette = {
     track = { 1, 1, 1, 0.07 },
     selection = { 0.31, 0.76, 0.97, 0.12 },
     warning = { 0.98, 0.62, 0.25, 1 },
+    better = { 0.37, 0.80, 0.48, 1 },
+    worse = { 0.91, 0.37, 0.34, 1 },
 }
 
 Skin.metrics = {

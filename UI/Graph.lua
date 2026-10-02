@@ -3,7 +3,8 @@
     Lightweight chart drawn with plain textures and Line objects (available on
     every supported client). Supports:
 
-      line   one or more series of { x, y } points
+      line   one or more series of { x, y } points; hovering snaps to the
+             nearest point of any series without hover = false
       bars   groups of one or two stacked bars (the second one is used to
              compare against another character)
 
@@ -385,23 +386,26 @@ function GraphMixin:UpdateHover()
         return
     end
 
-    local scaled = self.scaled and self.scaled[1]
-    if not scaled or #scaled == 0 then
+    if not self.scaled then
         return
     end
-    -- Nearest point of the first series by horizontal distance.
-    local bestIndex, bestDistance = 1, math.huge
-    for i = 1, #scaled do
-        local distance = math.abs(scaled[i].x - x)
-        if distance < bestDistance then
-            bestIndex, bestDistance = i, distance
+    -- Nearest point by horizontal distance among the hoverable series
+    -- (every series unless it sets hover = false).
+    local entry, bestDistance = nil, math.huge
+    for index, scaled in ipairs(self.scaled) do
+        if data.series[index].hover ~= false then
+            for i = 1, #scaled do
+                local distance = math.abs(scaled[i].x - x)
+                if distance < bestDistance then
+                    entry, bestDistance = scaled[i], distance
+                end
+            end
         end
     end
-    if bestIndex == self.hoverIndex then
+    if not entry or entry == self.hoverIndex then
         return
     end
-    self.hoverIndex = bestIndex
-    local entry = scaled[bestIndex]
+    self.hoverIndex = entry
     self.marker:ClearAllPoints()
     self.marker:SetPoint("TOP", self.plot, "TOPLEFT", entry.x, 0)
     self.marker:SetPoint("BOTTOM", self.plot, "BOTTOMLEFT", entry.x, 0)
