@@ -153,11 +153,35 @@ function MainPanel:UpdateHeader()
         record = self:GetViewedRecord()
     end
     local level = record and record.level or 0
-    self.frame.subtitle:SetText(ns.L["VIEWING_CHARACTER"]:format(
-        self.FormatCharacterName(record, true) .. "  " .. ns.L["LEVEL_SHORT"]:format(level)))
+    local levelText = "  " .. ns.L["LEVEL_SHORT"]:format(level)
     for _, tab in pairs(self.frame.tabs) do
         tab:UpdateWidth()
     end
+    -- Shorter forms of the subtitle, used when the full one reaches the tabs.
+    local forms = {
+        ns.L["VIEWING_CHARACTER"]:format(self.FormatCharacterName(record, true) .. levelText),
+        self.FormatCharacterName(record, true) .. levelText,
+        self.FormatCharacterName(record, false) .. levelText,
+    }
+    local subtitle = self.frame.subtitle
+    for _, text in ipairs(forms) do
+        subtitle:SetText(text)
+        if not self:SubtitleOverlapsTabs() then
+            break
+        end
+    end
+end
+
+--- True when the subtitle shares the tab row and runs into the last tab.
+function MainPanel:SubtitleOverlapsTabs()
+    local subtitle, lastTab = self.frame.subtitle, self.frame.tabs[self.views[#self.views].id]
+    local right = lastTab and lastTab:GetRight()
+    local subtitleRight = subtitle:GetRight()
+    if not right or not subtitleRight or not subtitle:GetTop() or not lastTab:GetTop() then
+        return false
+    end
+    local sameRow = subtitle:GetBottom() < lastTab:GetTop() and subtitle:GetTop() > lastTab:GetBottom()
+    return sameRow and subtitleRight - subtitle:GetStringWidth() < right + 8
 end
 
 --------------------------------------------------------------------------------
@@ -242,6 +266,7 @@ end
 function MainPanel:OnLogin()
     ns:RegisterMessage("XPL_XP_GAINED", function() self:Refresh() end)
     ns:RegisterMessage("XPL_STATE_CHANGED", function() self:Refresh() end)
+    ns:RegisterMessage("XPL_RUN_FINISHED", function() self:Refresh() end)
     ns:RegisterMessage("XPL_DATA_RESET", function(_, key)
         if key == self.viewedKey and not ns.db.characters[key] then
             self.viewedKey = nil

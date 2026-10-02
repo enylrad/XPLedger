@@ -17,6 +17,8 @@
                   totals  = { xp, kills, quests, sources = {}, contexts = {} },
                   samples = { t = {}, v = {} }, -- progress over time (level + fraction)
                   session = { ... see Tracker },
+                  runs, activeRun               -- instance runs, see Runs
+                  restedXP, restedAt, ...       -- offline rested estimate, see Rested
               },
           },
       }
@@ -56,6 +58,7 @@ local CHARACTER_DEFAULTS = {
     totals = { xp = 0, kills = 0, quests = 0, sources = {}, contexts = {} },
     samples = { t = {}, v = {} },
     session = {},
+    runs = {},
 }
 
 -- Ordered list of migrations. Each entry upgrades the database to `version`.
@@ -170,6 +173,8 @@ function Database:ResetCharacter(key)
     record.totals = nil
     record.samples = nil
     record.session = nil
+    record.runs = nil
+    record.activeRun = nil
     ns.ApplyDefaults(record, CHARACTER_DEFAULTS)
     ns:SendMessage("XPL_DATA_RESET", key)
 end

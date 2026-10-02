@@ -29,6 +29,7 @@ Core\Sources.lua
 Core\History.lua
 Core\Rested.lua
 Core\Quests.lua
+Core\Runs.lua
 
 UI\Theme.lua
 UI\Skins\Minimal.lua
@@ -41,6 +42,7 @@ UI\Views\Overview.lua
 UI\Views\Levels.lua
 UI\Views\Characters.lua
 UI\Views\Sources.lua
+UI\Views\Runs.lua
 UI\Options.lua
 UI\Broker.lua
 

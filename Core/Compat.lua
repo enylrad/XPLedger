@@ -217,6 +217,26 @@ function Compat.GetActivityContext()
     return "world"
 end
 
+--- Returns the instance the player is in as a table { name, instanceType,
+--- difficultyName, instanceID }, or nil outside instances or when the client
+--- hides the values.
+function Compat.GetInstanceInfo()
+    if not GetInstanceInfo then
+        return nil
+    end
+    local name, instanceType, _, difficultyName, _, _, _, instanceID = GetInstanceInfo()
+    name, instanceType = ns.SafeString(name), ns.SafeString(instanceType)
+    if not name or not instanceType or instanceType == "none" then
+        return nil
+    end
+    return {
+        name = name,
+        instanceType = instanceType,
+        difficultyName = ns.SafeString(difficultyName),
+        instanceID = ns.SafeNumber(instanceID) or name,
+    }
+end
+
 --- Returns true while a pet battle is running (mainline-API clients only).
 function Compat.InPetBattle()
     return C_PetBattles ~= nil and C_PetBattles.IsInBattle ~= nil and C_PetBattles.IsInBattle() == true
