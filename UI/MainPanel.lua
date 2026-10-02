@@ -77,6 +77,9 @@ function MainPanel:Build()
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
+    if frame.SetDontSavePosition then
+        frame:SetDontSavePosition(true)
+    end
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)

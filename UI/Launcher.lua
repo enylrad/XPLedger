@@ -56,6 +56,10 @@ function Launcher:Build()
     frame:SetFrameStrata("MEDIUM")
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
+    -- The position is stored in our saved variables, not in the layout cache.
+    if frame.SetDontSavePosition then
+        frame:SetDontSavePosition(true)
+    end
     frame:EnableMouse(true)
     frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     frame:RegisterForDrag("LeftButton")

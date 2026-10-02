@@ -114,6 +114,10 @@ function Tracker:OnLogin()
         end
     end)
 
+    ns:RegisterEvent("PLAYER_LOGOUT", function()
+        self.session.lastUpdate = time()
+    end)
+
     ns:RegisterMessage("XPL_DATA_RESET", function(_, key)
         if key == ns.charKey then
             self:BindSession()
@@ -181,6 +185,16 @@ function Tracker:OnExperienceChanged()
         self:TakeSnapshot()
         return
     end
+
+    -- The xp bar can roll over a moment before UnitLevel reports the new level.
+    -- Keep the old snapshot and look again shortly, otherwise the remainder of
+    -- the old level would be computed from the wrong baseline.
+    if level == oldLevel and xp < oldXP and not self.rolloverRetry then
+        self.rolloverRetry = true
+        C_Timer.After(0.3, function() self:OnExperienceChanged() end)
+        return
+    end
+    self.rolloverRetry = nil
 
     if level == oldLevel then
         local delta = xp - oldXP

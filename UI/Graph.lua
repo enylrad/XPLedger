@@ -312,7 +312,7 @@ function GraphMixin:RenderBars(width, height)
 
     local slot = width / #groups
     local groupWidth = slot * (1 - BAR_GAP_RATIO)
-    local labelEvery = math.max(1, math.ceil(#groups / math.floor(width / 26)))
+    local labelEvery = math.max(1, math.ceil(#groups / math.max(1, math.floor(width / 26))))
     self.barSlots = {}
 
     for index, group in ipairs(groups) do
