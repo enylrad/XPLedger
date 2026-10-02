@@ -313,12 +313,17 @@ function Skin:CreateXPBar(parent)
     local rested = Theme:CreateTexture(bar, { Theme.colors.rested[1], Theme.colors.rested[2], Theme.colors.rested[3], 0.55 }, "ARTWORK", 1)
     rested:SetPoint("TOP")
     rested:SetPoint("BOTTOM")
-    local fill = Theme:CreateTexture(bar, Theme.colors.xp, "ARTWORK", 2)
+    local questColor = Theme.sourceColors.quest
+    local quest = Theme:CreateTexture(bar, { questColor[1], questColor[2], questColor[3], 0.6 }, "ARTWORK", 2)
+    quest:SetPoint("TOP")
+    quest:SetPoint("BOTTOM")
+    local fill = Theme:CreateTexture(bar, Theme.colors.xp, "ARTWORK", 3)
     fill:SetPoint("TOPLEFT")
     fill:SetPoint("BOTTOMLEFT")
 
-    --- Updates the bar. Both values are fractions of the level (0..1).
-    function bar:SetProgress(progress, restedEnd)
+    --- Updates the bar. Every value is a fraction of the level (0..1);
+    --- questEnd marks the progress after turning in the completed quests.
+    function bar:SetProgress(progress, restedEnd, questEnd)
         local width = self:GetWidth()
         if not width or width <= 0 then
             return
@@ -330,6 +335,12 @@ function Skin:CreateXPBar(parent)
         rested:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", width * progress, 0)
         rested:SetWidth(math.max(1, width * (restedEnd - progress)))
         rested:SetShown(restedEnd > progress)
+        questEnd = questEnd or progress
+        quest:ClearAllPoints()
+        quest:SetPoint("TOPLEFT", self, "TOPLEFT", width * progress, 0)
+        quest:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", width * progress, 0)
+        quest:SetWidth(math.max(1, width * (questEnd - progress)))
+        quest:SetShown(questEnd > progress)
     end
     return bar
 end

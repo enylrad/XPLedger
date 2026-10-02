@@ -363,15 +363,25 @@ function Skin:CreateXPBar(parent)
     background:SetVertexColor(palette.track[1], palette.track[2], palette.track[3], palette.track[4])
     background:SetAllPoints()
 
+    -- Experience waiting in completed quests, between the rested overlay and the fill.
+    local quest = CreateFrame("StatusBar", nil, bar)
+    quest:SetAllPoints()
+    quest:SetStatusBarTexture(STATUSBAR_TEXTURE)
+    local questColor = Theme.sourceColors.quest
+    quest:SetStatusBarColor(questColor[1], questColor[2], questColor[3], 0.55)
+    quest:SetMinMaxValues(0, 1)
+
     local fill = CreateFrame("StatusBar", nil, bar)
     fill:SetAllPoints()
     fill:SetStatusBarTexture(STATUSBAR_TEXTURE)
     fill:SetMinMaxValues(0, 1)
+    fill:SetFrameLevel(quest:GetFrameLevel() + 1)
 
-    function bar:SetProgress(progress, restedEnd)
+    function bar:SetProgress(progress, restedEnd, questEnd)
         local color = restedEnd > progress and palette.rested or palette.xp
         fill:SetStatusBarColor(color[1], color[2], color[3], 1)
         fill:SetValue(progress)
+        quest:SetValue(questEnd or 0)
         self:SetValue(restedEnd)
     end
     return bar

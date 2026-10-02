@@ -265,7 +265,8 @@ function Launcher:Update()
 
     local progress = ns.Clamp(estimate.progress, 0, 1)
     local restedEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + estimate.rested) / estimate.maxXP, 0, 1) or 0
-    frame.xpBar:SetProgress(progress, math.max(progress, restedEnd))
+    local questEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + (estimate.questReadyXP or 0)) / estimate.maxXP, 0, 1) or 0
+    frame.xpBar:SetProgress(progress, math.max(progress, restedEnd), math.max(progress, questEnd))
 
     if frame.hovered and GameTooltip:IsOwned(frame) then
         GameTooltip:ClearLines()

@@ -143,6 +143,55 @@ function Compat.IsExperienceDisabledByUser()
 end
 
 --------------------------------------------------------------------------------
+-- Quest log
+--------------------------------------------------------------------------------
+
+local function SafeXP(value)
+    value = ns.SafeNumber(value)
+    return value and value > 0 and value or 0
+end
+
+--- Returns the quests of the log as an array of { questID, xp, complete }.
+--- Quests under collapsed headers are only visible on mainline clients.
+function Compat.GetQuestLogExperience()
+    local quests = {}
+    if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo and GetQuestLogRewardXP then
+        -- Mainline API: every entry is addressable by quest id.
+        local count = ns.SafeNumber(C_QuestLog.GetNumQuestLogEntries()) or 0
+        for i = 1, count do
+            local info = C_QuestLog.GetInfo(i)
+            local questID = info and ns.SafeNumber(info.questID)
+            if questID and questID > 0 and not info.isHeader and not info.isHidden then
+                local complete = (C_QuestLog.ReadyForTurnIn and C_QuestLog.ReadyForTurnIn(questID))
+                    or (C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID))
+                quests[#quests + 1] = {
+                    questID = questID,
+                    xp = SafeXP(GetQuestLogRewardXP(questID)),
+                    complete = complete == true,
+                }
+            end
+        end
+    elseif GetNumQuestLogEntries and GetQuestLogTitle and GetQuestLogRewardXP and SelectQuestLogEntry then
+        -- Legacy API: the reward functions read the selected entry.
+        local selected = GetQuestLogSelection and GetQuestLogSelection() or 0
+        local count = ns.SafeNumber(GetNumQuestLogEntries()) or 0
+        for i = 1, count do
+            local _, _, _, isHeader, _, isComplete, _, questID = GetQuestLogTitle(i)
+            if not isHeader then
+                SelectQuestLogEntry(i)
+                quests[#quests + 1] = {
+                    questID = ns.SafeNumber(questID) or 0,
+                    xp = SafeXP(GetQuestLogRewardXP()),
+                    complete = isComplete == 1 or isComplete == true,
+                }
+            end
+        end
+        SelectQuestLogEntry(selected)
+    end
+    return quests
+end
+
+--------------------------------------------------------------------------------
 -- Activity context
 --------------------------------------------------------------------------------
 

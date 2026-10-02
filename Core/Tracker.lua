@@ -360,6 +360,12 @@ function Tracker:GetEstimate()
         windowMinutes = ns.settings.rateWindow,
     }
     estimate.remaining = math.max(0, estimate.maxXP - estimate.xp)
+    if ns.Quests then
+        estimate.questReadyXP = ns.Quests.completeXP
+        estimate.questReadyCount = ns.Quests.completeCount
+        estimate.questLogXP = ns.Quests.totalXP
+        estimate.questLogCount = ns.Quests.totalCount
+    end
     estimate.progress = estimate.maxXP > 0 and estimate.xp / estimate.maxXP or 0
     estimate.atMaxLevel = estimate.level >= estimate.maxLevel
 

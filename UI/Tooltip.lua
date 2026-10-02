@@ -43,6 +43,17 @@ function SummaryTooltip:Fill(tooltip, hints)
             Row(L["TOOLTIP_RESTED"], ("%s (%.0f%%)"):format(ns.FormatInteger(estimate.rested),
                 Percent(estimate.rested, estimate.maxXP)))
         end
+        if (estimate.questReadyXP or 0) > 0 and estimate.maxXP > 0 then
+            local after = (estimate.xp + estimate.questReadyXP) / estimate.maxXP * 100
+            local value = after >= 100 and L["TOOLTIP_QUESTS_LEVEL_UP"]
+                or ("%.0f%%"):format(after)
+            Row(L["TOOLTIP_QUESTS_READY"]:format(estimate.questReadyCount),
+                ("%s  %s %s"):format(ns.FormatInteger(estimate.questReadyXP), "|cffffd100>|r", value))
+        end
+        if (estimate.questLogXP or 0) > 0 then
+            Row(L["TOOLTIP_QUESTS_LOG"]:format(estimate.questLogCount), ("%s (%.0f%%)"):format(
+                ns.FormatInteger(estimate.questLogXP), Percent(estimate.questLogXP, estimate.maxXP)))
+        end
         local _, _, fullIn, resting = ns.Rested:Estimate(ns.char)
         if resting and fullIn then
             Row(L["RESTED_FULL_IN"], fullIn == 0 and L["RESTED_FULL"] or ns.FormatDuration(fullIn))
