@@ -13,6 +13,7 @@
 
     Session record (persisted in the character record so it survives /reload):
       startedAt, lastUpdate, lastGainAt   epoch seconds
+      startLevel                          level when the session started
       xp, kills, quests                   totals of the session
       activeTime                          seconds counted as playing (idle gaps clipped)
       gains = { t = {}, a = {} }          timeline of gains (epoch seconds, amount)
@@ -48,6 +49,7 @@ local pendingLevel       -- level announced by PLAYER_LEVEL_UP, before UnitLevel
 local function NewSession(now)
     return {
         startedAt = now,
+        startLevel = ns.SafeNumber(UnitLevel("player")),
         lastUpdate = now,
         lastGainAt = now,
         xp = 0,
@@ -69,6 +71,10 @@ function Tracker:BindSession()
     local session = ns.char.session
     if type(session) ~= "table" or not session.startedAt
         or now - (session.lastUpdate or 0) > SESSION_RESUME_SECONDS then
+        -- Kept for the session summary of the previous login.
+        if type(session) == "table" and session.startedAt then
+            self.previousSession = session
+        end
         session = NewSession(now)
         ns.char.session = session
     end

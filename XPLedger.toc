@@ -32,6 +32,7 @@ Core\Quests.lua
 Core\Runs.lua
 Core\Records.lua
 Core\Goals.lua
+Core\Sessions.lua
 
 UI\Theme.lua
 UI\Skins\Minimal.lua

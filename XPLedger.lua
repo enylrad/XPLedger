@@ -27,7 +27,7 @@ local function PrintHelp()
     for _, line in ipairs({
         "HELP_TOGGLE", "HELP_OPTIONS", "HELP_LOCK", "HELP_UNLOCK",
         "HELP_SHOW", "HELP_HIDE", "HELP_RESET", "HELP_GOAL", "HELP_GOAL_SESSION",
-        "HELP_GOAL_CLEAR", "HELP_HELP",
+        "HELP_GOAL_CLEAR", "HELP_SESSION", "HELP_HELP",
     }) do
         DEFAULT_CHAT_FRAME:AddMessage("  " .. L[line])
     end
@@ -78,6 +78,7 @@ local commands = {
     hide = function() if ns.Launcher then ns.Launcher:SetShown(false) end end,
     reset = function() if ns.Launcher then ns.Launcher:ResetPosition() end end,
     goal = GoalCommand,
+    session = function() if ns.Sessions then ns.Sessions:PrintCurrent() end end,
     help = PrintHelp,
 }
 

@@ -20,6 +20,7 @@
                   session = { ... see Tracker },
                   runs, activeRun               -- instance runs, see Runs
                   goal                          -- level goal, see Goals
+                  sessions                      -- finished session summaries, see Sessions
                   restedXP, restedAt, ...       -- offline rested estimate, see Rested
               },
           },
@@ -73,6 +74,7 @@ local CHARACTER_DEFAULTS = {
     samples = { t = {}, v = {} },
     session = {},
     runs = {},
+    sessions = {},
 }
 
 -- Ordered list of migrations. Each entry upgrades the database to `version`.
@@ -188,6 +190,7 @@ function Database:ResetCharacter(key)
     record.samples = nil
     record.session = nil
     record.runs = nil
+    record.sessions = nil
     record.activeRun = nil
     ns.ApplyDefaults(record, CHARACTER_DEFAULTS)
     ns:SendMessage("XPL_DATA_RESET", key)

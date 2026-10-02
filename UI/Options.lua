@@ -207,7 +207,12 @@ function Options:BuildPanel(panel)
         alertY = alertY - 24
     end
 
-    local goalHelp = Caption(panel, "OPT_GOALS_DESC", x, alertY - 6, "small")
+    widgets.sessionSummary = Theme:CreateCheckbox(panel, "OPT_SESSION_SUMMARY",
+        function() return ns.settings.sessionSummary end,
+        function(value) ns.settings.sessionSummary = value end)
+    widgets.sessionSummary:SetPoint("TOPLEFT", x, alertY)
+
+    local goalHelp = Caption(panel, "OPT_GOALS_DESC", x, alertY - 30, "small")
     goalHelp:SetWidth(280)
     goalHelp:SetWordWrap(true)
 
