@@ -33,7 +33,7 @@ local function LauncherSetter(key)
 end
 
 local function SectionTitle(parent, key, x, y)
-    local title = Theme:CreateText(parent, 13, Theme.colors.accent)
+    local title = Theme:CreateText(parent, "accent")
     title:SetPoint("TOPLEFT", x, y)
     Theme:SetLocalizedText(title, key)
     local line = Theme:CreateTexture(parent, Theme.colors.border)
@@ -42,8 +42,8 @@ local function SectionTitle(parent, key, x, y)
     return title
 end
 
-local function Caption(parent, key, x, y)
-    local caption = Theme:CreateText(parent, 11, Theme.colors.muted)
+local function Caption(parent, key, x, y, role)
+    local caption = Theme:CreateText(parent, role or "label")
     caption:SetPoint("TOPLEFT", x, y)
     Theme:SetLocalizedText(caption, key)
     return caption
@@ -57,15 +57,15 @@ function Options:BuildPanel(panel)
     local widgets = {}
     self.widgets = widgets
 
-    local title = Theme:CreateText(panel, 18)
+    local title = Theme:CreateText(panel, "title")
     title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText(Theme.Hex(Theme.colors.accent) .. "XP|rLedger")
+    title:SetText(Theme:BrandTitle())
 
-    local version = Theme:CreateText(panel, 11, Theme.colors.muted)
+    local version = Theme:CreateText(panel, "muted")
     version:SetPoint("LEFT", title, "RIGHT", 8, -2)
     version:SetText("v" .. (ns.Compat.GetAddOnMetadata("Version") or "?"))
 
-    local subtitle = Theme:CreateText(panel, 12, Theme.colors.muted)
+    local subtitle = Theme:CreateText(panel, "muted")
     subtitle:SetPoint("TOPLEFT", 16, -42)
     Theme:SetLocalizedText(subtitle, "OPTIONS_SUBTITLE")
 
@@ -86,6 +86,23 @@ function Options:BuildPanel(panel)
     end)
     widgets.language:SetPoint("TOPLEFT", x, y - 46)
 
+    Caption(panel, "OPT_STYLE", x, y - 80)
+    widgets.style = Theme:CreateDropdown(panel, 220, function()
+        local options = {}
+        for _, style in ipairs(Theme.STYLES) do
+            options[#options + 1] = { value = style, label = L["STYLE_" .. style] }
+        end
+        return options
+    end, function() return ns.settings.style end, function(value)
+        if value == ns.settings.style then
+            return
+        end
+        ns.settings.style = value
+        -- Template based frames cannot be reskinned live: offer a reload.
+        Theme:Confirm(L["OPT_STYLE_RELOAD"], ReloadUI)
+    end)
+    widgets.style:SetPoint("TOPLEFT", x, y - 96)
+
     widgets.rateWindow = Theme:CreateSlider(panel, "OPT_RATE_WINDOW", 5, 60, 5,
         function(value) return L["MINUTES_VALUE"]:format(value) end,
         function() return ns.settings.rateWindow end,
@@ -93,9 +110,9 @@ function Options:BuildPanel(panel)
             ns.settings.rateWindow = value
             Notify()
         end)
-    widgets.rateWindow:SetPoint("TOPLEFT", x, y - 82)
+    widgets.rateWindow:SetPoint("TOPLEFT", x, y - 132)
     widgets.rateWindow:SetWidth(280)
-    local rateHelp = Caption(panel, "OPT_RATE_WINDOW_DESC", x, y - 124)
+    local rateHelp = Caption(panel, "OPT_RATE_WINDOW_DESC", x, y - 180, "small")
     rateHelp:SetWidth(280)
     rateHelp:SetWordWrap(true)
 
@@ -106,21 +123,21 @@ function Options:BuildPanel(panel)
             ns.settings.afkThreshold = value
             Notify()
         end)
-    widgets.afk:SetPoint("TOPLEFT", x, y - 156)
+    widgets.afk:SetPoint("TOPLEFT", x, y - 212)
     widgets.afk:SetWidth(280)
-    local afkHelp = Caption(panel, "OPT_AFK_DESC", x, y - 198)
+    local afkHelp = Caption(panel, "OPT_AFK_DESC", x, y - 260, "small")
     afkHelp:SetWidth(280)
     afkHelp:SetWordWrap(true)
 
     widgets.ding = Theme:CreateCheckbox(panel, "OPT_DING_SUMMARY",
         function() return ns.settings.dingSummary end,
         function(value) ns.settings.dingSummary = value end)
-    widgets.ding:SetPoint("TOPLEFT", x, y - 236)
+    widgets.ding:SetPoint("TOPLEFT", x, y - 296)
 
     widgets.played = Theme:CreateCheckbox(panel, "OPT_PLAYED_SILENT",
         function() return ns.settings.silentPlayed end,
         function(value) ns.settings.silentPlayed = value end)
-    widgets.played:SetPoint("TOPLEFT", x, y - 260)
+    widgets.played:SetPoint("TOPLEFT", x, y - 322)
 
     ----------------------------------------------------------------- Launcher
     x, y = COLUMN_X[2], -76
@@ -134,15 +151,15 @@ function Options:BuildPanel(panel)
     widgets.lock = Theme:CreateCheckbox(panel, "OPT_LAUNCHER_LOCK", LauncherGetter("locked"), function(value)
         ns.Launcher:SetLocked(value)
     end)
-    widgets.lock:SetPoint("TOPLEFT", x, y - 52)
+    widgets.lock:SetPoint("TOPLEFT", x, y - 54)
 
     widgets.hideAtMax = Theme:CreateCheckbox(panel, "OPT_LAUNCHER_HIDE_MAX", LauncherGetter("hideAtMax"), LauncherSetter("hideAtMax"))
-    widgets.hideAtMax:SetPoint("TOPLEFT", x, y - 76)
+    widgets.hideAtMax:SetPoint("TOPLEFT", x, y - 80)
 
     widgets.perCharacter = Theme:CreateCheckbox(panel, "OPT_LAUNCHER_PER_CHAR", LauncherGetter("perCharacter"), LauncherSetter("perCharacter"))
-    widgets.perCharacter:SetPoint("TOPLEFT", x, y - 100)
+    widgets.perCharacter:SetPoint("TOPLEFT", x, y - 106)
 
-    Caption(panel, "OPT_LAUNCHER_TEXT", x, y - 132)
+    Caption(panel, "OPT_LAUNCHER_TEXT", x, y - 140)
     widgets.textMode = Theme:CreateDropdown(panel, 220, function()
         local options = {}
         for _, mode in ipairs({ "eta", "percent", "rate", "remaining" }) do
@@ -150,30 +167,30 @@ function Options:BuildPanel(panel)
         end
         return options
     end, LauncherGetter("textMode"), LauncherSetter("textMode"))
-    widgets.textMode:SetPoint("TOPLEFT", x, y - 148)
+    widgets.textMode:SetPoint("TOPLEFT", x, y - 156)
 
     widgets.scale = Theme:CreateSlider(panel, "OPT_LAUNCHER_SCALE", 0.6, 2, 0.05,
         function(value) return ("%d%%"):format(value * 100 + 0.5) end,
         LauncherGetter("scale"), LauncherSetter("scale"))
-    widgets.scale:SetPoint("TOPLEFT", x, y - 184)
+    widgets.scale:SetPoint("TOPLEFT", x, y - 196)
     widgets.scale:SetWidth(280)
 
     widgets.alpha = Theme:CreateSlider(panel, "OPT_LAUNCHER_ALPHA", 0.2, 1, 0.05,
         function(value) return ("%d%%"):format(value * 100 + 0.5) end,
         LauncherGetter("alpha"), LauncherSetter("alpha"))
-    widgets.alpha:SetPoint("TOPLEFT", x, y - 228)
+    widgets.alpha:SetPoint("TOPLEFT", x, y - 244)
     widgets.alpha:SetWidth(280)
 
     local resetPosition = Theme:CreateButton(panel, "OPT_RESET_POSITION", 160, 22, function()
         ns.Launcher:ResetPosition()
     end)
-    resetPosition:SetPoint("TOPLEFT", x, y - 276)
+    resetPosition:SetPoint("TOPLEFT", x, y - 296)
 
     --------------------------------------------------------------------- Data
-    x, y = COLUMN_X[1], -380
+    x, y = COLUMN_X[1], -440
     SectionTitle(panel, "OPT_SECTION_DATA", x, y)
 
-    widgets.dataInfo = Theme:CreateText(panel, 12, Theme.colors.muted)
+    widgets.dataInfo = Theme:CreateText(panel, "muted")
     widgets.dataInfo:SetPoint("TOPLEFT", x, y - 30)
 
     local resetCharacter = Theme:CreateButton(panel, "OPT_RESET_CHAR", 180, 22, function()

@@ -23,8 +23,13 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
   - *Sources*: experience by source (monsters, quests, exploration, pet battles, other)
     and by activity (open world, dungeons, raids, battlegrounds, scenarios and delves).
 - **Level up summary** in chat: played and real time spent on the level and its main source.
-- **Options** in the game's AddOns settings: language, rate window, idle threshold,
-  shortcut behavior, data reset.
+- **Options** in the game's AddOns settings: language, interface style, rate window, idle
+  threshold, shortcut behavior, data reset.
+- **Two interface styles**
+  - *Blizzard* (default): built from the game's own templates, fonts and art, so the addon
+    looks native in every client: Retail frames on Retail, Forever's art on Forever, the
+    classic dialogs on older clients. Missing templates fall back to classic Blizzard art.
+  - *Minimal*: a flat, compact look. Changing the style reloads the interface.
 - **Data Broker** feed for Titan Panel, ElvUI, Bazooka and similar, and an entry in the
   Retail/Forever addon compartment.
 
@@ -78,8 +83,8 @@ Then `/reload` in game after each change. Enable Lua errors with `/console scrip
 Core/     namespace and events, localization, compatibility layer, database,
           tracker (rate engine), source attribution, level history
 Locales/  enUS (base) and esES (also used for esMX)
-UI/       theme and widgets, launcher, tooltip, graph widget, main panel,
-          views (overview, levels, characters, sources), options, data broker
+UI/       theme facade, skins (Blizzard, Minimal), launcher, tooltip, graph widget,
+          main panel, views (overview, levels, characters, sources), options, data broker
 Libs/     LibStub, CallbackHandler-1.0, LibDataBroker-1.1
 ```
 
