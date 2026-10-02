@@ -19,4 +19,8 @@ Libs\embeds.xml
 
 Core\Core.lua
 
+Locales\enUS.lua
+Locales\esES.lua
+Core\Locale.lua
+
 XPLedger.lua

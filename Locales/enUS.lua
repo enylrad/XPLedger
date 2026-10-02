@@ -1,0 +1,168 @@
+--[[----------------------------------------------------------------------------
+    XPLedger - English (base locale)
+    Every key used by the addon must exist here; other locales may be partial.
+------------------------------------------------------------------------------]]
+
+local _, ns = ...
+
+ns.Locales = ns.Locales or {}
+ns.Locales.enUS = {
+    -- Durations
+    DURATION_UNKNOWN = "--",
+    DURATION_DAYS_HOURS = "%dd %dh",
+    DURATION_HOURS_MINUTES = "%dh %dm",
+    DURATION_MINUTES = "%dm",
+    DURATION_MINUTES_SECONDS = "%dm %ds",
+    DURATION_SECONDS = "%ds",
+
+    -- Slash command help
+    HELP_HEADER = "Commands:",
+    HELP_TOGGLE = "/xpl - open or close the main window",
+    HELP_OPTIONS = "/xpl options - open the options",
+    HELP_LOCK = "/xpl lock - lock the shortcut position",
+    HELP_UNLOCK = "/xpl unlock - unlock the shortcut position",
+    HELP_SHOW = "/xpl show - show the shortcut",
+    HELP_HIDE = "/xpl hide - hide the shortcut",
+    HELP_RESET = "/xpl reset - move the shortcut back to the center",
+    HELP_HELP = "/xpl help - show this help",
+
+    -- Languages
+    LANGUAGE_auto = "Automatic (game language)",
+    LANGUAGE_enUS = "English",
+    LANGUAGE_esES = "Español",
+
+    -- Experience sources
+    SOURCE_mob = "Monsters",
+    SOURCE_quest = "Quests",
+    SOURCE_exploration = "Exploration",
+    SOURCE_petbattle = "Pet battles",
+    SOURCE_other = "Other",
+
+    -- Activities (where the experience was earned)
+    CONTEXT_world = "Open world",
+    CONTEXT_dungeon = "Dungeons",
+    CONTEXT_raid = "Raids",
+    CONTEXT_battleground = "Battlegrounds",
+    CONTEXT_scenario = "Scenarios & delves",
+
+    -- Shortcut button
+    LEVEL_SHORT = "Lv %d",
+    LAUNCHER_MAX_LEVEL = "Max level",
+    LAUNCHER_IDLE = "Idle",
+    LAUNCHER_LOCKED = "Shortcut locked. Right-click it again to unlock.",
+    LAUNCHER_UNLOCKED = "Shortcut unlocked. Drag it to move it.",
+    LAUNCHER_HIDDEN = "Shortcut hidden. Type /xpl show to bring it back.",
+    LAUNCHER_POSITION_RESET = "Shortcut position reset.",
+
+    -- Summary tooltip
+    TOOLTIP_LEVEL = "Level %d",
+    TOOLTIP_XP = "Experience",
+    TOOLTIP_REMAINING = "Remaining",
+    TOOLTIP_RESTED = "Rested",
+    TOOLTIP_RATE = "XP per hour (%s)",
+    TOOLTIP_RATE_SESSION = "XP per hour (session)",
+    TOOLTIP_ETA = "Time to level",
+    TOOLTIP_KILLS_TO_LEVEL = "Kills to level",
+    TOOLTIP_QUESTS_TO_LEVEL = "Quests to level",
+    TOOLTIP_SESSION_XP = "Session experience",
+    TOOLTIP_SESSION_TIME = "Session time",
+    TOOLTIP_LEVEL_TIME = "Played on this level",
+    TOOLTIP_NO_DATA = "Gain some experience to get an estimate.",
+    TOOLTIP_IDLE = "No experience gained recently: estimate paused.",
+    TOOLTIP_MAX_LEVEL = "Maximum level reached.",
+    TOOLTIP_XP_DISABLED = "Experience gain is disabled.",
+    TOOLTIP_HINT_CLICK = "Left-click: open details",
+    TOOLTIP_HINT_LOCK = "Right-click: lock position",
+    TOOLTIP_HINT_UNLOCK = "Right-click: unlock position",
+    TOOLTIP_HINT_DRAG = "Drag: move",
+    WINDOW_LAST_MINUTES = "last %d min",
+
+    -- Main window
+    TAB_OVERVIEW = "Overview",
+    TAB_LEVELS = "Levels",
+    TAB_CHARACTERS = "Characters",
+    TAB_SOURCES = "Sources",
+    STAT_RATE = "XP / hour",
+    STAT_ETA = "Time to level",
+    STAT_SESSION_XP = "Session XP",
+    STAT_SESSION_TIME = "Session time",
+    RANGE_SESSION = "Session",
+    RANGE_DAY = "24 hours",
+    RANGE_WEEK = "7 days",
+    RANGE_ALL = "All",
+    GRAPH_PROGRESS_TITLE = "Level progress",
+    GRAPH_RATE_TITLE = "XP per hour this session (5 min blocks)",
+    GRAPH_NO_DATA = "Not enough data yet",
+    GRAPH_POINT_LEVEL = "Level %.2f",
+    VIEWING_CHARACTER = "Character: %s",
+
+    -- Levels tab
+    LEVELS_TITLE = "Played time per level",
+    LEVELS_COMPARE = "Compare with",
+    LEVELS_COMPARE_NONE = "Nobody",
+    LEVELS_PARTIAL = "Partially tracked",
+    LEVELS_IN_PROGRESS = "In progress",
+    LEVELS_TOTAL = "Total played",
+    LEVELS_AVERAGE = "Average per level",
+    LEVELS_FASTEST = "Fastest level",
+    LEVELS_SLOWEST = "Slowest level",
+    LEVELS_EMPTY = "No levels recorded yet for this character.",
+    LEVEL_PLAYED = "Played time",
+    LEVEL_REAL = "Real time",
+    LEVEL_XP = "Experience tracked",
+
+    -- Characters tab
+    CHAR_COL_NAME = "Character",
+    CHAR_COL_LEVEL = "Level",
+    CHAR_COL_PLAYED = "Played",
+    CHAR_COL_AVG = "Avg / level",
+    CHAR_COL_SEEN = "Last seen",
+    CHAR_HINT = "Click a character to see its levels and sources.",
+    CHAR_CURRENT = "this character",
+    CHAR_DELETE = "Delete",
+    CHAR_DELETE_CONFIRM = "Delete all XPLedger data for %s?",
+    CHAR_SEEN_NOW = "Now",
+    CHAR_SEEN_AGO = "%s ago",
+
+    -- Sources tab
+    SOURCES_BY_SOURCE = "By source",
+    SOURCES_BY_CONTEXT = "By activity",
+    SCOPE_LEVEL = "Current level",
+    SCOPE_ALL = "All tracked",
+    SOURCES_EMPTY = "No experience recorded yet.",
+
+    -- Level up summary
+    DING_SUMMARY = "Level %d reached in %s played (%s real time).",
+    DING_MAIN_SOURCE = "Main source: %s (%d%%), mostly in %s.",
+
+    -- Options
+    OPTIONS_SUBTITLE = "Experience rate, time to level and leveling history.",
+    OPT_SECTION_GENERAL = "General",
+    OPT_LANGUAGE = "Language",
+    OPT_RATE_WINDOW = "Rate window",
+    OPT_RATE_WINDOW_DESC = "How many recent minutes are used to compute your XP per hour.",
+    OPT_AFK = "Idle threshold",
+    OPT_AFK_DESC = "Gaps longer than this without gaining experience do not count as playing time.",
+    OPT_DING_SUMMARY = "Print a summary in chat when leveling up",
+    OPT_PLAYED_SILENT = "Read /played automatically without printing it in chat",
+    OPT_SECTION_LAUNCHER = "Shortcut",
+    OPT_LAUNCHER_SHOW = "Show shortcut",
+    OPT_LAUNCHER_LOCK = "Lock position",
+    OPT_LAUNCHER_HIDE_MAX = "Hide at maximum level",
+    OPT_LAUNCHER_PER_CHAR = "Save position per character",
+    OPT_LAUNCHER_SCALE = "Scale",
+    OPT_LAUNCHER_ALPHA = "Opacity",
+    OPT_LAUNCHER_TEXT = "Main text",
+    OPT_RESET_POSITION = "Reset position",
+    TEXT_MODE_eta = "Time to level",
+    TEXT_MODE_percent = "Level progress",
+    TEXT_MODE_rate = "XP per hour",
+    TEXT_MODE_remaining = "XP remaining",
+    OPT_SECTION_DATA = "Data",
+    OPT_DATA_INFO = "Characters tracked: %d",
+    OPT_RESET_CHAR = "Reset this character",
+    OPT_RESET_CHAR_CONFIRM = "Delete the leveling history of this character?",
+    OPT_RESET_ALL = "Reset all data",
+    OPT_RESET_ALL_CONFIRM = "Delete the leveling history of ALL characters?",
+    MINUTES_VALUE = "%d min",
+}
