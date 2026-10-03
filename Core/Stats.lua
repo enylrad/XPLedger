@@ -206,6 +206,7 @@ function Stats:OnDeath()
     if level then
         stats.deathLevels[level] = (stats.deathLevels[level] or 0) + 1
     end
+    ns:SendMessage("XPL_STATE_CHANGED")
 end
 
 --------------------------------------------------------------------------------
@@ -289,6 +290,25 @@ local function Streaks(days)
     return longest, current, #times
 end
 
+local function AddSession(data, key, session)
+    local duration = math.max(0, (session.endedAt or 0) - (session.startedAt or 0))
+    data.sessions = data.sessions + 1
+    data.sessionTime = data.sessionTime + duration
+    data.sessionXP = data.sessionXP + (session.xp or 0)
+    data.sessionActive = data.sessionActive + (session.active or 0)
+    data.longestSession = Best(data.longestSession, duration, key, { at = session.startedAt })
+    if session.rate and (session.active or 0) >= MIN_SESSION_ACTIVE then
+        data.bestSession = Best(data.bestSession, session.rate, key, { at = session.startedAt })
+    end
+end
+
+--- Summary of the running session (archived only at the next login).
+local function LiveSession()
+    local _, _, level = ns.Tracker:GetSnapshot()
+    local summary = ns.Sessions:Summarize(ns.Tracker:GetSession(), level or ns.char.level, true)
+    return summary.xp > 0 and summary or nil
+end
+
 --- Aggregates every statistic of a list of { key, record } entries: one
 --- character or the whole account. "Best" values remember the holder key.
 function Stats:Build(entries)
@@ -332,15 +352,11 @@ function Stats:Build(entries)
 
         -- Sessions.
         for _, session in ipairs(record.sessions or {}) do
-            local duration = math.max(0, (session.endedAt or 0) - (session.startedAt or 0))
-            data.sessions = data.sessions + 1
-            data.sessionTime = data.sessionTime + duration
-            data.sessionXP = data.sessionXP + (session.xp or 0)
-            data.sessionActive = data.sessionActive + (session.active or 0)
-            data.longestSession = Best(data.longestSession, duration, key, { at = session.startedAt })
-            if session.rate and (session.active or 0) >= MIN_SESSION_ACTIVE then
-                data.bestSession = Best(data.bestSession, session.rate, key, { at = session.startedAt })
-            end
+            AddSession(data, key, session)
+        end
+        local live = key == ns.charKey and LiveSession()
+        if live then
+            AddSession(data, key, live)
         end
 
         -- Runs.

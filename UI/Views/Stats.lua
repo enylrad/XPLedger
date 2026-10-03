@@ -22,6 +22,7 @@ local TILE_COLUMNS = 4
 local PAGE_TOP = -30
 local SUMMARY_ROWS = 5
 local ROW_HEIGHT = 20
+local LIVE_REFRESH_SECONDS = 30   -- the running session keeps growing without gains
 
 local SCOPES = {
     { value = "character", label = "STATS_SCOPE_CHARACTER" },
@@ -436,6 +437,7 @@ end
 --------------------------------------------------------------------------------
 
 function Stats:Refresh()
+    self.lastRefresh = GetTime()
     self.scope = ns.settings.panel.statsScope
     local page = ns.settings.panel.statsPage
     if not self.pages[page] then
@@ -462,6 +464,15 @@ function Stats:Refresh()
         self:RefreshWhere(data)
     else
         self:RefreshPrey(data)
+    end
+end
+
+function Stats:OnTick()
+    if self.lastRefresh and GetTime() - self.lastRefresh < LIVE_REFRESH_SECONDS then
+        return
+    end
+    if ns.settings.panel.statsScope == "account" or ns.MainPanel:GetViewedKey() == ns.charKey then
+        self:Refresh()
     end
 end
 
