@@ -17,6 +17,19 @@ All notable changes to XPLedger are documented here. The format follows
 - The *Stats* tab ignored the running session until the next login, did not update
   after a death and did not refresh while no experience was gained.
 
+## [0.1.1] - 2026-10-03 (Español)
+
+### Corregido
+
+- El juego se bloqueaba con "script ran too long" al abrir la ventana principal si un
+  gráfico de progreso de nivel era plano.
+- Un personaje renombrado, o un personaje de WoW: Forever cuyo apellido se leía tarde,
+  empezaba un registro vacío en lugar de conservar su historial. Ahora los personajes
+  también se reconocen por su GUID, y otro personaje con el mismo nombre de pila ya no
+  puede quedarse con un registro guardado sin apellido.
+- La pestaña *Estadísticas* no tenía en cuenta la sesión en curso hasta el siguiente
+  inicio de sesión, no se actualizaba al morir y no se refrescaba sin ganar experiencia.
+
 ## [0.1.0] - 2026-10-03
 
 First release.
@@ -51,6 +64,45 @@ First release.
 - English and Spanish localization.
 - Support for Retail (Midnight), WoW: Forever, Classic Era / Anniversary and the
   Classic progression realms from a single package.
+
+## [0.1.0] - 2026-10-03 (Español)
+
+Primera versión.
+
+### Añadido
+
+- Seguimiento de la experiencia con ritmo de XP/hora reciente, ritmo de la sesión y
+  estimación del tiempo para subir de nivel, además de los enemigos, misiones e
+  instancias que faltan para subir.
+- Origen de cada ganancia (enemigos, misiones, exploración, duelos de mascotas, otros) y
+  de la actividad (mundo abierto, mazmorras, bandas, campos de batalla, gestas y
+  profundidades).
+- Historial por nivel con tiempo jugado, tiempo real, XP y fuente principal de cada nivel.
+- Barra de acceso rápido movible y bloqueable con el nivel, el tiempo para subir, la
+  barra de XP con la experiencia descansada y la experiencia de las misiones completadas
+  pendientes de entregar.
+- Ventana principal con las pestañas *Resumen*, *Niveles*, *Personajes*, *Fuentes*,
+  *Instancias* y *Estadísticas*:
+  - *Niveles*: línea de tiempo jugado acumulado, comparación opcional con otro
+    personaje, tabla por nivel y fichas de ritmo.
+  - *Personajes*: todos los personajes registrados con una estimación de la experiencia
+    descansada acumulada mientras están desconectados.
+  - *Instancias*: mazmorras, profundidades y gestas con su duración, XP y XP/hora, y un
+    modo *Récords* con el objetivo de nivel y los récords de la cuenta.
+  - *Estadísticas*: más de cuarenta estadísticas de un personaje o de toda la cuenta,
+    repartidas en *Resumen*, *Cuándo*, *Dónde* y *Presas*.
+- Objetivo de nivel con fecha límite opcional y objetivo de experiencia por sesión.
+- Avisos al alcanzar un objetivo, batir un récord, agotar la experiencia descansada y
+  cada 10 niveles.
+- Resúmenes de sesión: la última sesión se muestra al conectar y `/xpl session` compara
+  la actual con la anterior.
+- Exportación a CSV de los niveles y las instancias de un personaje.
+- Modo pasivo al llegar al nivel máximo.
+- Estilos de interfaz nativo de Blizzard y minimalista.
+- Panel de opciones, fuente de LibDataBroker y entrada en el menú de addons del minimapa.
+- Traducción al inglés y al español.
+- Soporte para Retail (Midnight), WoW: Forever, Classic Era / Anniversary y los reinos
+  de progresión de Classic en un solo paquete.
 
 [0.1.1]: https://github.com/enylrad/XPLedger/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/enylrad/XPLedger/releases/tag/v0.1.0
