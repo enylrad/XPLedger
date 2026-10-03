@@ -10,7 +10,7 @@
           records    = { ... see Records ... },
           characters = {
               ["Name-Realm"] = {
-                  name, surname, realm, class, race, faction, flavor, level,
+                  guid, name, surname, realm, class, race, faction, flavor, level,
                   firstSeen, lastSeen,
                   played, playedAt,             -- last /played total and when it was read
                   launcherPosition,             -- used when positions are per character
@@ -108,21 +108,48 @@ function Database:OnInitialize()
     ns.Theme:Init(db.settings.style)
 end
 
+--- Moves a character record to a new key (the character was renamed).
+local function Rekey(oldKey, key)
+    local record = ns.db.characters[oldKey]
+    ns.db.characters[oldKey] = nil
+    ns.db.characters[key] = record
+    if ns.Records then
+        ns.Records:RenameCharacter(oldKey, key)
+    end
+    return record
+end
+
+--- Key of the record that belongs to `guid` on `realm`, or nil.
+local function FindByGUID(guid, realm)
+    for key, record in pairs(ns.db.characters) do
+        if type(record) == "table" and record.guid == guid and record.realm == realm then
+            return key
+        end
+    end
+end
+
 function Database:OnLogin()
     local key, name, realm, surname = ns.Compat.GetCharacterKey()
+    local guid = ns.SafeString(UnitGUID("player"))
+    if guid == "" then
+        guid = nil
+    end
     local record = ns.db.characters[key]
+    if type(record) ~= "table" and guid then
+        -- The GUID survives renames (and a surname read late on Forever).
+        local oldKey = FindByGUID(guid, realm)
+        if oldKey then
+            record = Rekey(oldKey, key)
+        end
+    end
     if type(record) ~= "table" and surname then
         -- Older versions keyed Forever characters without the surname: the
-        -- first character that logs in with that first name claims the record.
+        -- first character that logs in with that first name claims the record,
+        -- unless the record already belongs to another character.
         local legacyKey = ("%s-%s"):format(name, realm)
         local legacy = ns.db.characters[legacyKey]
-        if type(legacy) == "table" and not legacy.surname then
-            ns.db.characters[legacyKey] = nil
-            record = legacy
-            ns.db.characters[key] = record
-            if ns.Records then
-                ns.Records:RenameCharacter(legacyKey, key)
-            end
+        if type(legacy) == "table" and not legacy.surname and (not legacy.guid or legacy.guid == guid) then
+            record = Rekey(legacyKey, key)
         end
     end
     if type(record) ~= "table" then
@@ -133,6 +160,7 @@ function Database:OnLogin()
 
     local _, classFile = UnitClass("player")
     local _, raceFile = UnitRace("player")
+    record.guid = guid or record.guid
     record.name = name
     record.surname = surname
     record.realm = realm
