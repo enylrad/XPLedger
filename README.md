@@ -114,6 +114,13 @@ The repository can be linked into every installed flavor with a directory juncti
 
 Then `/reload` in game after each change. Enable Lua errors with `/console scriptErrors 1`.
 
+To share a build, package it into `XPLedger-<version>.zip` (version read from the TOC,
+development files left out):
+
+```powershell
+./tools/package.ps1
+```
+
 ### Structure
 
 ```
