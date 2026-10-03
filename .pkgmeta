@@ -1,6 +1,10 @@
 # Packaging metadata for the BigWigs packager (CurseForge / Wago / WoWInterface).
 package-as: XPLedger
 
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
 ignore:
   - tools
   - README.md
