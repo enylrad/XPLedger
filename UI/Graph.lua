@@ -80,9 +80,10 @@ local function NiceStep(range, steps)
     return nice * magnitude
 end
 
---- Expands [low, high] to nice tick boundaries.
+--- Expands [low, high] to nice tick boundaries. A range lost in the
+--- rounding of its values (a flat line) is widened to one unit.
 local function NiceRange(low, high)
-    if high <= low then
+    if high - low <= math.max(1, math.abs(high)) * 1e-9 then
         high = low + 1
     end
     local step = NiceStep(high - low, GRID_LINES)
@@ -212,8 +213,11 @@ end
 
 --- Draws the horizontal grid with its value labels.
 function GraphMixin:RenderGrid(yMin, yMax, step, height, formatter)
-    local value = yMin
-    while value <= yMax + step * 0.001 do
+    -- Counted, not accumulated: a step below the precision of the values
+    -- would never reach yMax.
+    local count = math.min(math.floor((yMax - yMin) / step + 0.5), GRID_LINES * 3)
+    for i = 0, count do
+        local value = yMin + i * step
         local y = (value - yMin) / (yMax - yMin) * height
         local line = self:Texture(Theme.colors.grid, "BACKGROUND")
         line:SetPoint("BOTTOMLEFT", self.plot, "BOTTOMLEFT", 0, y)
@@ -222,7 +226,6 @@ function GraphMixin:RenderGrid(yMin, yMax, step, height, formatter)
 
         local label = self:Label(formatter(value), "RIGHT")
         label:SetPoint("RIGHT", self.plot, "BOTTOMLEFT", -6, y)
-        value = value + step
     end
 end
 
