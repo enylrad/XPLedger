@@ -139,4 +139,4 @@ and add its code to `ns.AVAILABLE_LOCALES` in `Core/Locale.lua`.
 
 ## License
 
-MIT
+GNU Lesser General Public License v3.0 (LGPL-3.0). See [LICENSE](LICENSE) for the LGPL terms and [COPYING](COPYING) for the GNU GPL v3 they build on.
