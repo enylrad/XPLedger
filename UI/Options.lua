@@ -282,23 +282,26 @@ function Options:BuildPetPanel(panel)
     end)
     widgets.lock:SetPoint("TOPLEFT", x, y - 54)
 
+    widgets.maxLevel = Theme:CreateCheckbox(panel, "OPT_PET_MAX_LEVEL", PetGetter("showAtMaxLevel"), PetSetter("showAtMaxLevel"))
+    widgets.maxLevel:SetPoint("TOPLEFT", x, y - 80)
+
     widgets.scale = Theme:CreateSlider(panel, "OPT_PET_SCALE", 1, 4, 0.5,
         function(value) return ("%gx"):format(value) end,
         PetGetter("scale"), PetSetter("scale"))
-    widgets.scale:SetPoint("TOPLEFT", x, y - 88)
+    widgets.scale:SetPoint("TOPLEFT", x, y - 114)
     widgets.scale:SetWidth(280)
 
     local resetPosition = Theme:CreateButton(panel, "OPT_RESET_POSITION", 160, 22, function()
         ns.Pet:ResetPosition()
     end)
-    resetPosition:SetPoint("TOPLEFT", x, y - 140)
+    resetPosition:SetPoint("TOPLEFT", x, y - 166)
 
     local demo = Theme:CreateButton(panel, "OPT_PET_DEMO", 160, 22, function()
         ns.Pet:Demo()
     end)
     demo:SetPoint("TOPLEFT", resetPosition, "BOTTOMLEFT", 0, -6)
 
-    local help = Caption(panel, "OPT_PET_DESC", x, y - 206, "small")
+    local help = Caption(panel, "OPT_PET_DESC", x, y - 232, "small")
     help:SetWidth(280)
     help:SetWordWrap(true)
 

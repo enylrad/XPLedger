@@ -24,7 +24,8 @@
       3 veteran    at the cap (iron helmet and gilded spear)
 
     Settings (settings.pet): enabled, asked, locked, scale, position, bar,
-    textMode, badge, clickAction ("poke" or "panel"), summaryTooltip.
+    textMode, badge, clickAction ("poke" or "panel"), summaryTooltip,
+    showAtMaxLevel (unlike the shortcut, the pet stays at the level cap).
 
       Left-click   say hello, or open the main window (clickAction)
       Right-click  lock / unlock the position
@@ -632,7 +633,9 @@ function Pet:ApplyPosition()
 end
 
 function Pet:UpdateVisibility()
-    local shown = Settings().enabled or self.demo ~= nil
+    local settings = Settings()
+    local wanted = settings.enabled and (settings.showAtMaxLevel or not Compat.IsAtMaxLevel())
+    local shown = wanted or self.demo ~= nil
     self.frame:SetShown(shown)
     self.frame.selection:SetShown(shown and self.editing == true)
     if not shown then
@@ -657,6 +660,7 @@ function Pet:SetLevel(level)
     self.level = level
     self.stage = self:GetStage(level)
     if self.frame then
+        self:UpdateVisibility()
         self:Refresh()
     end
 end

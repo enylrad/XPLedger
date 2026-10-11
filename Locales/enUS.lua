@@ -425,6 +425,7 @@ ns.Locales.enUS = {
     OPT_PET_SUBTITLE = "A pixel art murloc that levels up with you.",
     OPT_PET_SHOW = "Show pet",
     OPT_PET_SCALE = "Size",
+    OPT_PET_MAX_LEVEL = "Also show at the level cap",
     OPT_PET_DEMO = "Play animations",
     OPT_PET_PREVIEW = "Preview",
     OPT_SECTION_PET_XP = "Experience",

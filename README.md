@@ -53,7 +53,8 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
     when the level bar is almost full.
   - It can show your experience: a bar, a text (time to level, progress, XP/hour or
     remaining XP) and a level badge. It can also open the main window on click and show the
-    experience summary in its tooltip, so it can replace the shortcut.
+    experience summary in its tooltip, so it can replace the shortcut. Unlike the shortcut it
+    stays at the level cap (optional).
   - Drag it anywhere (or move it from Edit Mode on Retail). It has its own page in the
     options with an animated preview.
 - **Options** in the game's AddOns settings: language, interface style, rate window, idle

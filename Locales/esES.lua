@@ -424,6 +424,7 @@ ns.Locales.esES = {
     OPT_PET_SUBTITLE = "Un múrloc en pixel art que sube de nivel contigo.",
     OPT_PET_SHOW = "Mostrar mascota",
     OPT_PET_SCALE = "Tamaño",
+    OPT_PET_MAX_LEVEL = "Mostrar también a nivel máximo",
     OPT_PET_DEMO = "Ver animaciones",
     OPT_PET_PREVIEW = "Vista previa",
     OPT_SECTION_PET_XP = "Experiencia",

@@ -71,6 +71,7 @@ local DEFAULT_SETTINGS = {
         badge = true,     -- level badge
         clickAction = "poke", -- left-click: "poke" (say hello) or "panel"
         summaryTooltip = false, -- experience summary in the tooltip
+        showAtMaxLevel = true, -- keep the pet at the level cap (the shortcut hides)
     },
     panel = {
         tab = "overview",

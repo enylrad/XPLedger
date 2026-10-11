@@ -21,6 +21,7 @@ All notable changes to XPLedger are documented here. The format follows
     level bar is almost full.
   - It can show an experience bar, a text and a level badge, open the main window on
     click and show the experience summary in its tooltip, so it can replace the shortcut.
+    Unlike the shortcut it stays at the level cap, unless you turn that off.
   - Drag it anywhere, or move it from Edit Mode on Retail. It has its own page in the
     options with an animated preview, and the `/xpl pet`, `/xpl pet reset` and
     `/xpl pet demo [1-3]` commands. The sprites add about 1.5 MB to the addon.
@@ -42,7 +43,8 @@ All notable changes to XPLedger are documented here. The format follows
     pone nervioso cuando la barra de nivel está casi llena.
   - Puede mostrar una barra de experiencia, un texto y una insignia de nivel, abrir la
     ventana principal con un clic y mostrar el resumen de experiencia en su tooltip, así
-    que puede sustituir al acceso directo.
+    que puede sustituir al acceso directo. A diferencia de este, sigue visible a nivel
+    máximo, salvo que lo desactives.
   - Puedes arrastrarla a donde quieras o moverla desde el Modo edición en Retail. Tiene su
     propia página en las opciones con una vista previa animada, y los comandos `/xpl pet`,
     `/xpl pet reset` y `/xpl pet demo [1-3]`. Los sprites añaden unos 1,5 MB al addon.
