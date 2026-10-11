@@ -80,6 +80,62 @@ function Compat.InCombat()
     return not ns.IsSecret(affecting) and affecting == true
 end
 
+--- Returns true while the player is underwater, or at least swimming on
+--- clients without IsSubmerged (secret-safe).
+function Compat.IsUnderwater()
+    local check = IsSubmerged or IsSwimming
+    local underwater = check and check()
+    return not ns.IsSecret(underwater) and (underwater == true or underwater == 1)
+end
+
+--- Returns true while the player is flagged away from keyboard (secret-safe).
+function Compat.IsAFK()
+    local afk = UnitIsAFK and UnitIsAFK("player")
+    return not ns.IsSecret(afk) and (afk == true or afk == 1)
+end
+
+--- Returns true when an API answer is a plain true (secret-safe).
+local function IsTrue(value)
+    return not ns.IsSecret(value) and (value == true or value == 1)
+end
+
+--- Returns true while the player lies dead, before releasing the spirit.
+function Compat.IsDead()
+    return IsTrue(UnitIsDead("player"))
+end
+
+--- Returns true while the player is a ghost (spirit released).
+function Compat.IsGhost()
+    return UnitIsGhost ~= nil and IsTrue(UnitIsGhost("player"))
+end
+
+--- Returns true when the current target is a dead enemy (secret-safe).
+function Compat.IsTargetDead()
+    return IsTrue(UnitExists("target")) and IsTrue(UnitIsDead("target"))
+        and IsTrue(UnitCanAttack("player", "target"))
+end
+
+--- Returns the player's health as a fraction, or nil when the client hides it.
+function Compat.GetHealthPercent()
+    local health = ns.SafeNumber(UnitHealth("player"))
+    local maxHealth = ns.SafeNumber(UnitHealthMax("player"))
+    if not health or not maxHealth or maxHealth <= 0 then
+        return nil
+    end
+    return health / maxHealth
+end
+
+--- Returns the localized name of a spell, or nil.
+function Compat.GetSpellName(spellID)
+    local name
+    if C_Spell and C_Spell.GetSpellName then
+        name = C_Spell.GetSpellName(spellID)
+    elseif GetSpellInfo then
+        name = GetSpellInfo(spellID)
+    end
+    return ns.SafeString(name)
+end
+
 --------------------------------------------------------------------------------
 -- Experience
 --------------------------------------------------------------------------------

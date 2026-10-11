@@ -32,6 +32,17 @@ local function LauncherSetter(key)
     end
 end
 
+local function PetGetter(key)
+    return function() return ns.settings.pet[key] end
+end
+
+local function PetSetter(key)
+    return function(value)
+        ns.settings.pet[key] = value
+        Notify()
+    end
+end
+
 local function SectionTitle(parent, key, x, y)
     local title = Theme:CreateText(parent, "accent")
     title:SetPoint("TOPLEFT", x, y)
@@ -238,18 +249,154 @@ function Options:BuildPanel(panel)
     resetAll:SetPoint("TOPLEFT", resetCharacter, "BOTTOMLEFT", 0, -6)
 end
 
+--------------------------------------------------------------------------------
+-- Pet page (subcategory)
+--------------------------------------------------------------------------------
+
+local PREVIEW_SCALE = 4
+local PREVIEW_STEP = 3 -- seconds per state in the preview
+
+function Options:BuildPetPanel(panel)
+    local widgets = {}
+    self.petWidgets = widgets
+
+    local title = Theme:CreateText(panel, "title")
+    title:SetPoint("TOPLEFT", 16, -16)
+    Theme:SetLocalizedText(title, "OPT_SECTION_PET")
+
+    local subtitle = Theme:CreateText(panel, "muted")
+    subtitle:SetPoint("TOPLEFT", 16, -42)
+    Theme:SetLocalizedText(subtitle, "OPT_PET_SUBTITLE")
+
+    ----------------------------------------------------------------- Settings
+    local x, y = COLUMN_X[1], -76
+    SectionTitle(panel, "OPT_SECTION_GENERAL", x, y)
+
+    widgets.show = Theme:CreateCheckbox(panel, "OPT_PET_SHOW", PetGetter("enabled"), function(value)
+        ns.Pet:SetEnabled(value)
+    end)
+    widgets.show:SetPoint("TOPLEFT", x, y - 28)
+
+    widgets.lock = Theme:CreateCheckbox(panel, "OPT_LAUNCHER_LOCK", PetGetter("locked"), function(value)
+        ns.Pet:SetLocked(value)
+    end)
+    widgets.lock:SetPoint("TOPLEFT", x, y - 54)
+
+    widgets.scale = Theme:CreateSlider(panel, "OPT_PET_SCALE", 1, 4, 0.5,
+        function(value) return ("%gx"):format(value) end,
+        PetGetter("scale"), PetSetter("scale"))
+    widgets.scale:SetPoint("TOPLEFT", x, y - 88)
+    widgets.scale:SetWidth(280)
+
+    local resetPosition = Theme:CreateButton(panel, "OPT_RESET_POSITION", 160, 22, function()
+        ns.Pet:ResetPosition()
+    end)
+    resetPosition:SetPoint("TOPLEFT", x, y - 140)
+
+    local demo = Theme:CreateButton(panel, "OPT_PET_DEMO", 160, 22, function()
+        ns.Pet:Demo()
+    end)
+    demo:SetPoint("TOPLEFT", resetPosition, "BOTTOMLEFT", 0, -6)
+
+    local help = Caption(panel, "OPT_PET_DESC", x, y - 206, "small")
+    help:SetWidth(280)
+    help:SetWordWrap(true)
+
+    ------------------------------------------------------------------ Preview
+    x = COLUMN_X[2]
+    SectionTitle(panel, "OPT_PET_PREVIEW", x, y)
+
+    local size = 32 * PREVIEW_SCALE
+    local preview = CreateFrame("Frame", nil, panel)
+    preview:SetPoint("TOPLEFT", x + (280 - size) / 2, y - 32)
+    preview:SetSize(size, size)
+    local background = Theme:CreateTexture(preview, Theme.colors.levelBox, "BACKGROUND")
+    background:SetAllPoints()
+    local sprite = ns.PetSprite.Create(preview)
+
+    local caption = Theme:CreateText(panel, "normal", "CENTER")
+    caption:SetPoint("TOP", preview, "BOTTOM", 0, -8)
+    caption:SetWidth(280)
+
+    local states = ns.Pet.STATES
+    local index, elapsed = 1, 0
+    local function ShowState()
+        local state = states[index]
+        sprite:SetStage(ns.Pet.stage or 1)
+        sprite:SetAnimation(state)
+        if state == "ghost" then
+            sprite:SetTint(unpack(ns.Pet.GHOST_TINT))
+        else
+            sprite:SetTint()
+        end
+        caption:SetText(L["PET_STAGE_" .. sprite.stage] .. ": " .. L["PET_STATE_" .. state])
+    end
+    preview:SetScript("OnShow", function()
+        elapsed = 0
+        ShowState()
+    end)
+    preview:SetScript("OnUpdate", function(_, delta)
+        sprite:Update(delta)
+        elapsed = elapsed + delta
+        if elapsed >= PREVIEW_STEP then
+            elapsed = 0
+            index = index % #states + 1
+            ShowState()
+        end
+    end)
+    ns:RegisterMessage("XPL_LOCALE_CHANGED", ShowState)
+    ShowState()
+
+    --------------------------------------------------------------- Experience
+    y = -290
+    SectionTitle(panel, "OPT_SECTION_PET_XP", x, y)
+
+    widgets.bar = Theme:CreateCheckbox(panel, "OPT_PET_BAR", PetGetter("bar"), PetSetter("bar"))
+    widgets.bar:SetPoint("TOPLEFT", x, y - 28)
+
+    widgets.badge = Theme:CreateCheckbox(panel, "OPT_PET_BADGE", PetGetter("badge"), PetSetter("badge"))
+    widgets.badge:SetPoint("TOPLEFT", x, y - 54)
+
+    Caption(panel, "OPT_PET_TEXT", x, y - 88)
+    widgets.textMode = Theme:CreateDropdown(panel, 220, function()
+        local options = { { value = "none", label = L["PET_TEXT_none"] } }
+        for _, mode in ipairs({ "eta", "percent", "rate", "remaining" }) do
+            options[#options + 1] = { value = mode, label = L["TEXT_MODE_" .. mode] }
+        end
+        return options
+    end, PetGetter("textMode"), PetSetter("textMode"))
+    widgets.textMode:SetPoint("TOPLEFT", x, y - 104)
+
+    Caption(panel, "OPT_PET_CLICK", x, y - 138)
+    widgets.clickAction = Theme:CreateDropdown(panel, 220, function()
+        return {
+            { value = "poke", label = L["PET_CLICK_poke"] },
+            { value = "panel", label = L["PET_CLICK_panel"] },
+        }
+    end, PetGetter("clickAction"), PetSetter("clickAction"))
+    widgets.clickAction:SetPoint("TOPLEFT", x, y - 154)
+
+    widgets.summaryTooltip = Theme:CreateCheckbox(panel, "OPT_PET_SUMMARY", PetGetter("summaryTooltip"), PetSetter("summaryTooltip"))
+    widgets.summaryTooltip:SetPoint("TOPLEFT", x, y - 188)
+
+    local replaceHelp = Caption(panel, "OPT_PET_REPLACE_DESC", x, y - 218, "small")
+    replaceHelp:SetWidth(280)
+    replaceHelp:SetWordWrap(true)
+end
+
 --- Re-reads every setting into the widgets (the values can change elsewhere,
 --- for example with /xpl lock or a right-click on the launcher).
 function Options:Refresh()
-    if not self.widgets then
-        return
-    end
-    for _, widget in pairs(self.widgets) do
-        if widget.Refresh then
-            widget:Refresh()
+    for _, widgets in ipairs({ self.widgets or {}, self.petWidgets or {} }) do
+        for _, widget in pairs(widgets) do
+            if widget.Refresh then
+                widget:Refresh()
+            end
         end
     end
-    self.widgets.dataInfo:SetText(L["OPT_DATA_INFO"]:format(ns.Database:CountCharacters()))
+    if self.widgets then
+        self.widgets.dataInfo:SetText(L["OPT_DATA_INFO"]:format(ns.Database:CountCharacters()))
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -269,24 +416,39 @@ function Options:OnLogin()
     panel:SetScript("OnHide", function() Theme:CloseMenus() end)
     self.panel = panel
 
+    -- The pet has its own page under the addon's entry.
+    local petPanel = CreateFrame("Frame")
+    petPanel.name = L["OPT_SECTION_PET"]
+    petPanel.parent = ns.title
+    petPanel:Hide()
+    petPanel:SetScript("OnShow", function()
+        if not self.petWidgets then
+            self:BuildPetPanel(petPanel)
+        end
+        self:Refresh()
+    end)
+    petPanel:SetScript("OnHide", function() Theme:CloseMenus() end)
+    self.petPanel = petPanel
+
     if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
         local category = Settings.RegisterCanvasLayoutCategory(panel, ns.title)
+        if Settings.RegisterCanvasLayoutSubcategory then
+            Settings.RegisterCanvasLayoutSubcategory(category, petPanel, petPanel.name)
+        end
         Settings.RegisterAddOnCategory(category)
         self.category = category
     elseif InterfaceOptions_AddCategory then
         InterfaceOptions_AddCategory(panel)
+        InterfaceOptions_AddCategory(petPanel)
     end
 
-    ns:RegisterMessage("XPL_SETTINGS_CHANGED", function()
-        if panel:IsShown() then
+    local function RefreshIfShown()
+        if panel:IsShown() or petPanel:IsShown() then
             self:Refresh()
         end
-    end)
-    ns:RegisterMessage("XPL_LOCALE_CHANGED", function()
-        if panel:IsShown() then
-            self:Refresh()
-        end
-    end)
+    end
+    ns:RegisterMessage("XPL_SETTINGS_CHANGED", RefreshIfShown)
+    ns:RegisterMessage("XPL_LOCALE_CHANGED", RefreshIfShown)
 end
 
 --- Opens the game settings on this addon's page.

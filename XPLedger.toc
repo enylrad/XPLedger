@@ -41,6 +41,9 @@ UI\Skins\Minimal.lua
 UI\Skins\Blizzard.lua
 UI\Tooltip.lua
 UI\Launcher.lua
+UI\Pet\Sprite.lua
+UI\Pet\Effects.lua
+UI\Pet\Pet.lua
 UI\Graph.lua
 UI\MainPanel.lua
 UI\Views\Overview.lua

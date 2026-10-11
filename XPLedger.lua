@@ -27,7 +27,7 @@ local function PrintHelp()
     for _, line in ipairs({
         "HELP_TOGGLE", "HELP_OPTIONS", "HELP_LOCK", "HELP_UNLOCK",
         "HELP_SHOW", "HELP_HIDE", "HELP_RESET", "HELP_GOAL", "HELP_GOAL_SESSION",
-        "HELP_GOAL_CLEAR", "HELP_SESSION", "HELP_EXPORT", "HELP_HELP",
+        "HELP_GOAL_CLEAR", "HELP_SESSION", "HELP_EXPORT", "HELP_PET", "HELP_HELP",
     }) do
         DEFAULT_CHAT_FRAME:AddMessage("  " .. L[line])
     end
@@ -66,6 +66,22 @@ local function GoalCommand(args)
     end
 end
 
+--- /xpl pet [reset | demo [stage]]
+local function PetCommand(args)
+    local Pet = ns.Pet
+    if not Pet then
+        return
+    end
+    local action, stage = args:match("^(%S*)%s*(%S*)")
+    if action == "reset" then
+        Pet:ResetPosition()
+    elseif action == "demo" then
+        Pet:Demo(stage)
+    else
+        Pet:SetEnabled(not ns.settings.pet.enabled)
+    end
+end
+
 -- Maps each subcommand to its action. Modules are resolved lazily because the
 -- UI modules are optional from the point of view of the bootstrap.
 local commands = {
@@ -80,6 +96,7 @@ local commands = {
     goal = GoalCommand,
     export = function(args) if ns.Export then ns.Export:Show(args == "runs" and "runs" or "levels") end end,
     session = function() if ns.Sessions then ns.Sessions:PrintCurrent() end end,
+    pet = PetCommand,
     help = PrintHelp,
 }
 

@@ -4,6 +4,49 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- An optional murloc pet in pixel art that levels up with you. On the first login XPLedger
+  asks whether you want it. It grows in three stages (hatchling, grown and, at the level
+  cap, a veteran with a helmet).
+  - It cheers when you level up, parties when you earn an achievement, fights in combat
+    and panics at low health (where the game lets addons read it), celebrates a win or
+    wipes its brow when you get away, is knocked out when you die and floats as a ghost
+    until you are back on your feet.
+  - It swims, fishes with you and eats the catch, sleeps while you are away, rests with a
+    mug in inns and cities, jumps when you jump, copies emotes such as `/dance`, `/wave`,
+    `/cheer`, `/roar` or `/kiss`, fidgets when nothing happens and gets nervous when the
+    level bar is almost full.
+  - It can show an experience bar, a text and a level badge, open the main window on
+    click and show the experience summary in its tooltip, so it can replace the shortcut.
+  - Drag it anywhere, or move it from Edit Mode on Retail. It has its own page in the
+    options with an animated preview, and the `/xpl pet`, `/xpl pet reset` and
+    `/xpl pet demo [1-3]` commands. The sprites add about 1.5 MB to the addon.
+
+## [Unreleased] (Español)
+
+### Añadido
+
+- Una mascota múrloc opcional en pixel art que sube de nivel contigo. La primera vez que
+  entras, XPLedger te pregunta si la quieres. Crece en tres fases (cría, adulto y, al llegar
+  al nivel máximo, veterano con casco).
+  - Se alegra cuando subes de nivel, hace fiesta cuando ganas un logro, lucha en combate y
+    entra en pánico con poca vida (donde el juego deja leerla), celebra la victoria o se
+    seca el sudor si escapas, queda K.O. cuando mueres y flota como fantasma hasta que
+    vuelves a estar en pie.
+  - Bucea, pesca contigo y se come lo que sacas, duerme cuando estás ausente, descansa con
+    una jarra en posadas y ciudades, salta cuando saltas, imita emotes como `/bailar`,
+    `/saludar`, `/animar`, `/rugir` o `/besar`, se entretiene cuando no pasa nada y se
+    pone nervioso cuando la barra de nivel está casi llena.
+  - Puede mostrar una barra de experiencia, un texto y una insignia de nivel, abrir la
+    ventana principal con un clic y mostrar el resumen de experiencia en su tooltip, así
+    que puede sustituir al acceso directo.
+  - Puedes arrastrarla a donde quieras o moverla desde el Modo edición en Retail. Tiene su
+    propia página en las opciones con una vista previa animada, y los comandos `/xpl pet`,
+    `/xpl pet reset` y `/xpl pet demo [1-3]`. Los sprites añaden unos 1,5 MB al addon.
+
 ## [0.1.1] - 2026-10-03
 
 ### Fixed

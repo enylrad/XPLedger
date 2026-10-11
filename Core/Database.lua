@@ -60,6 +60,18 @@ local DEFAULT_SETTINGS = {
         alpha = 1,
         textMode = "eta",
     },
+    pet = {
+        enabled = false,
+        asked = false,    -- the first run question was answered
+        locked = false,
+        scale = 2,        -- screen pixels per sprite pixel
+        -- position = { point, relativePoint, x, y } once moved
+        bar = true,       -- experience bar under the pet
+        textMode = "none", -- text under the pet: none or a launcher text mode
+        badge = true,     -- level badge
+        clickAction = "poke", -- left-click: "poke" (say hello) or "panel"
+        summaryTooltip = false, -- experience summary in the tooltip
+    },
     panel = {
         tab = "overview",
         range = "session",

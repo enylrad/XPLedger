@@ -8,3 +8,6 @@ Thumbs.db
 # Packaging output
 .release/
 *.zip
+
+# Generated preview of the pet sprites (tools/pet/build-murloc.js)
+tools/pet/preview.png

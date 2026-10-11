@@ -220,8 +220,9 @@ local function FormatRate(rate)
     return rate and (ns.FormatNumber(rate) .. "/h") or ("-- /h")
 end
 
---- Returns the primary and secondary texts for the configured text mode.
-local function BuildTexts(estimate)
+--- Returns the primary and secondary texts of a text mode (eta, percent,
+--- rate or remaining). Also used by the pet.
+function Launcher.BuildTexts(estimate, mode)
     local L = ns.L
     if estimate.disabled then
         return L["TOOLTIP_XP_DISABLED"], ""
@@ -237,7 +238,6 @@ local function BuildTexts(estimate)
         eta = L["LAUNCHER_IDLE"]
     end
 
-    local mode = Settings().textMode
     if mode == "percent" then
         return percent, eta .. "  ·  " .. FormatRate(rate)
     elseif mode == "rate" then
@@ -248,6 +248,15 @@ local function BuildTexts(estimate)
     return eta, percent .. "  ·  " .. FormatRate(rate)
 end
 
+--- Returns the values of an experience bar: progress, end of the rested
+--- overlay and end of the completed quests overlay. Also used by the pet.
+function Launcher.GetBarValues(estimate)
+    local progress = ns.Clamp(estimate.progress, 0, 1)
+    local restedEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + estimate.rested) / estimate.maxXP, 0, 1) or 0
+    local questEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + (estimate.questReadyXP or 0)) / estimate.maxXP, 0, 1) or 0
+    return progress, math.max(progress, restedEnd), math.max(progress, questEnd)
+end
+
 function Launcher:Update()
     local frame = self.frame
     if not frame or not frame:IsShown() then
@@ -256,14 +265,11 @@ function Launcher:Update()
     local estimate = ns.Tracker:GetEstimate()
     frame.levelText:SetText(estimate.level)
 
-    local primary, secondary = BuildTexts(estimate)
+    local primary, secondary = Launcher.BuildTexts(estimate, Settings().textMode)
     frame.primaryText:SetText(primary)
     frame.secondaryText:SetText(secondary)
 
-    local progress = ns.Clamp(estimate.progress, 0, 1)
-    local restedEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + estimate.rested) / estimate.maxXP, 0, 1) or 0
-    local questEnd = estimate.maxXP > 0 and ns.Clamp((estimate.xp + (estimate.questReadyXP or 0)) / estimate.maxXP, 0, 1) or 0
-    frame.xpBar:SetProgress(progress, math.max(progress, restedEnd), math.max(progress, questEnd))
+    frame.xpBar:SetProgress(Launcher.GetBarValues(estimate))
 
     if frame.hovered and GameTooltip:IsOwned(frame) then
         GameTooltip:ClearLines()
