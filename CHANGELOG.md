@@ -4,7 +4,7 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-11
 
 ### Added
 
@@ -26,7 +26,7 @@ All notable changes to XPLedger are documented here. The format follows
     options with an animated preview, and the `/xpl pet`, `/xpl pet reset` and
     `/xpl pet demo [1-3]` commands. The sprites add about 1.5 MB to the addon.
 
-## [Unreleased] (Español)
+## [0.2.0] - 2026-10-11 (Español)
 
 ### Añadido
 
