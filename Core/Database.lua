@@ -8,6 +8,7 @@
           schema     = <number>,
           settings   = { ... see DEFAULT_SETTINGS ... },
           records    = { ... see Records ... },
+          trainerCache = { ... see Spells ... },
           characters = {
               ["Name-Realm"] = {
                   guid, name, surname, realm, class, race, faction, flavor, level,
@@ -42,6 +43,14 @@ local DEFAULT_SETTINGS = {
     dingSummary = true,
     silentPlayed = true,
     sessionSummary = true,
+    levelUpSplash = true, -- level up summary in the middle of the screen (Forever)
+    levelUpScale = 1,     -- size of that summary
+    levelUpParts = {      -- what that summary shows
+        portrait = true,  -- portrait and name
+        stats = true,
+        spells = true,
+        zones = true,
+    },
     goals = {
         sessionXP = 0,    -- experience goal per session, 0 = off
     },
@@ -72,6 +81,11 @@ local DEFAULT_SETTINGS = {
         clickAction = "poke", -- left-click: "poke" (say hello) or "panel"
         summaryTooltip = false, -- experience summary in the tooltip
         showAtMaxLevel = true, -- keep the pet at the level cap (the shortcut hides)
+        species = "murloc", -- companion: "murloc" or "void" (Nihil)
+        cheer = false,    -- says a cheering line now and then
+        cheerSeconds = 300, -- time between cheers (20 s to 30 min, see PetTalk.INTERVALS)
+        locale = "auto",  -- language of what the pet says: "auto" (the addon's) or a locale
+        harsh = false,    -- "unfiltered" voice of the species that have one (Nihil): harsher lines
     },
     panel = {
         tab = "overview",

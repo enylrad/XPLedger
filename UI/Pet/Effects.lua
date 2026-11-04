@@ -2,7 +2,7 @@
     XPLedger - Pet effects
     Small particle system around the murloc: confetti, sparkles, bubbles and
     the pixel art icons stored in the last row of the sprite sheets (hearts,
-    music notes, stars, "!" and "Z").
+    music notes, stars, "!" and "Z"), and the specks of Void of the rage form.
 
     Positions and speeds are in sprite pixels from the bottom left corner of
     the pet, so the effects scale with it.
@@ -23,6 +23,14 @@ local ICON_SIZE = 8
 -- Icon index in the sheet (see ICONS in tools/pet/murloc-art.js).
 local ICONS = { heart = 0, note = 1, star = 2, exclaim = 3, zee = 4 }
 
+-- The Void: black and deep violet specks (no flashes, nothing bright).
+local VOID_COLORS = { { 0.1, 0.04, 0.2 }, { 0.18, 0.09, 0.36 }, { 0.27, 0.15, 0.5 }, { 0.43, 0.34, 0.69 } }
+-- Where the ball of Void sits while the pet transforms, in sprite pixels.
+local BALL_X, BALL_Y = 16, 8
+
+-- Bursts of the transformation (see Effects:Burst): how many particles.
+PetEffects.BURSTS = { implode = 22, bang = 34, pop = 12 }
+
 local CONFETTI_COLORS = {
     { 0.31, 0.76, 0.97 }, { 0.96, 0.78, 0.30 }, { 1, 0.44, 0.71 }, { 0.57, 0.83, 0.42 }, { 0.89, 0.41, 0.24 },
 }
@@ -32,7 +40,6 @@ local CONFETTI_COLORS = {
 PetEffects.EMITTERS = {
     party = { kind = "confetti", rate = 14, burst = 24 },
     happy = { kind = "sparkle", rate = 5, burst = 6 },
-    evolve = { kind = "sparkle", rate = 14, burst = 20 },
     victory = { kind = "sparkle", rate = 3, burst = 8 },
     swim = { kind = "bubble", rate = 1.8, burst = 2 },
     sleep = { kind = "zee", rate = 0.7, burst = 1 },
@@ -40,6 +47,7 @@ PetEffects.EMITTERS = {
     love = { kind = "heart", rate = 3, burst = 2 },
     quest = { kind = "exclaim", rate = 0, burst = 1 },
     revive = { kind = "star", rate = 1.5, burst = 2 },
+    rage = { kind = "mote", rate = 12, burst = 0 },
 }
 
 local function Random(low, high)
@@ -79,7 +87,7 @@ function Effects:Acquire(kind)
         local sheetHeight = PetSprite.SIZE * PetSprite.ROWS
         local left = (index % perRow) * ICON_SIZE
         local top = (PetSprite.ROWS - 1) * PetSprite.SIZE + math.floor(index / perRow) * ICON_SIZE
-        texture:SetTexture(PetSprite.TEXTURE_PATH .. 1, nil, nil, "NEAREST")
+        texture:SetTexture(PetSprite.GetTexture("murloc"), nil, nil, "NEAREST")
         texture:SetTexCoord(left / sheetWidth, (left + ICON_SIZE) / sheetWidth,
             top / sheetHeight, (top + ICON_SIZE) / sheetHeight)
         texture:SetBlendMode("BLEND")
@@ -89,6 +97,17 @@ function Effects:Acquire(kind)
     end
     texture:SetVertexColor(1, 1, 1, 1)
     return texture
+end
+
+--- Spawns a one-off burst of PetEffects.BURSTS: the Void sucked into the
+--- ball (implode), thrown out of it (bang) or a small puff (pop).
+function Effects:Burst(kind)
+    if not self.frame:IsShown() then
+        return
+    end
+    for _ = 1, PetEffects.BURSTS[kind] or 0 do
+        self:Spawn(kind)
+    end
 end
 
 --- Spawns one particle of the given kind.
@@ -140,6 +159,36 @@ function Effects:Spawn(kind)
         p.x, p.y = 25, 28
         p.vy = 3
         p.life = 1.4
+    elseif kind == "mote" or kind == "implode" or kind == "bang" or kind == "pop" then
+        -- Specks of Void (WHITE texture, tinted black and deep violet).
+        local color = VOID_COLORS[math.random(1, #VOID_COLORS)]
+        region:SetVertexColor(color[1], color[2], color[3], 1)
+        p.size = math.random(1, 2)
+        local angle = Random(0, 6.28)
+        if kind == "mote" then
+            -- Drifting up all around the horror (twice the pet's size).
+            p.x, p.y = Random(-12, 44), Random(2, 44)
+            p.vy = Random(5, 12)
+            p.wobble = 1.5
+            p.life = Random(0.9, 1.5)
+        elseif kind == "implode" then
+            -- From a ring around the ball straight into it.
+            local distance = Random(14, 22)
+            p.life = Random(0.45, 0.7)
+            p.x, p.y = BALL_X + math.cos(angle) * distance, BALL_Y + 8 + math.sin(angle) * distance
+            p.vx = (BALL_X - p.x) / p.life
+            p.vy = (BALL_Y - p.y) / p.life
+        else
+            -- Out of the ball in every direction, fast, then slowing down.
+            local speed = kind == "bang" and Random(40, 80) or Random(15, 30)
+            p.x, p.y = BALL_X, BALL_Y
+            p.vx, p.vy = math.cos(angle) * speed, math.sin(angle) * speed + 10
+            p.drag = 3
+            p.life = Random(0.5, 0.9)
+            if kind == "bang" then
+                p.size = math.random(1, 3)
+            end
+        end
     elseif kind == "star" then
         -- Orbits above the head.
         p.size = 5
@@ -189,19 +238,32 @@ function Effects:Update(elapsed)
             self:Spawn(emitter.kind)
         end
     end
-    local alive = {}
-    for i = 1, #self.particles do
-        local p = self.particles[i]
+    -- Runs every frame while the pet is shown: the list is compacted in
+    -- place, so nothing is allocated (and there is no work at all when no
+    -- particle is alive).
+    local particles = self.particles
+    local count = #particles
+    if count == 0 then
+        return
+    end
+    local alive = 0
+    for i = 1, count do
+        local p = particles[i]
+        particles[i] = nil
         p.age = p.age + elapsed
         if p.age >= p.life then
             self:Release(p)
         else
             p.vy = p.vy + (p.gravity or 0) * elapsed
+            if p.drag then
+                local keep = math.max(0, 1 - p.drag * elapsed)
+                p.vx, p.vy = p.vx * keep, p.vy * keep
+            end
             p.x = (p.x or 0) + p.vx * elapsed
             p.y = (p.y or 0) + p.vy * elapsed
             self:Place(p)
-            alive[#alive + 1] = p
+            alive = alive + 1
+            particles[alive] = p
         end
     end
-    self.particles = alive
 end

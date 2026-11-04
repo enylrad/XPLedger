@@ -9,5 +9,5 @@ Thumbs.db
 .release/
 *.zip
 
-# Generated preview of the pet sprites (tools/pet/build-murloc.js)
+# Generated preview of the pet sprites (tools/pet/build-pets.js)
 tools/pet/preview.png

@@ -220,6 +220,71 @@ function Options:BuildPanel(panel)
         function(value) ns.settings.sessionSummary = value end)
     widgets.sessionSummary:SetPoint("TOPLEFT", x, alertY)
 
+    -- Level up summary. It only pops up on its own in WoW Forever, but it is
+    -- configurable everywhere (and /xpl levelup demo works in every client).
+    do
+        alertY = alertY - 24
+        local parts = {}
+        local function UpdateParts()
+            local enabled = ns.settings.levelUpSplash and true or false
+            for _, check in ipairs(parts) do
+                check:SetEnabled(enabled)
+                -- The label is .label in the Blizzard skin and .text in Minimal.
+                local label = check.label or check.text
+                if label then
+                    label:SetAlpha(enabled and 1 or 0.4)
+                end
+            end
+        end
+        widgets.levelUpSplash = Theme:CreateCheckbox(panel, "OPT_LEVELUP_SPLASH",
+            function() return ns.settings.levelUpSplash end,
+            function(value)
+                ns.settings.levelUpSplash = value
+                UpdateParts()
+            end)
+        widgets.levelUpSplash:SetPoint("TOPLEFT", x, alertY)
+
+        -- What the summary shows, indented under it.
+        for _, entry in ipairs({
+            { "portrait", "OPT_LEVELUP_PORTRAIT" },
+            { "stats", "OPT_LEVELUP_STATS" },
+            { "spells", "OPT_LEVELUP_SPELLS" },
+            { "zones", "OPT_LEVELUP_ZONES" },
+        }) do
+            local key = entry[1]
+            alertY = alertY - 24
+            local check = Theme:CreateCheckbox(panel, entry[2],
+                function() return ns.settings.levelUpParts[key] end,
+                function(value) ns.settings.levelUpParts[key] = value end)
+            check:SetPoint("TOPLEFT", x + 20, alertY)
+            widgets["levelUp_" .. key] = check
+            parts[#parts + 1] = check
+        end
+
+        widgets.levelUpScale = Theme:CreateSlider(panel, "OPT_LEVELUP_SCALE", 0.6, 1.2, 0.05,
+            function(value) return ("%d%%"):format(value * 100 + 0.5) end,
+            function() return ns.settings.levelUpScale end,
+            function(value)
+                ns.settings.levelUpScale = value
+                -- Resize a summary on screen right away, to see the result.
+                local shown = _G.XPLedgerLevelUpFrame
+                if shown and shown:IsShown() then
+                    shown:SetScale(value)
+                end
+            end)
+        widgets.levelUpScale:SetPoint("TOPLEFT", x + 20, alertY - 30)
+        widgets.levelUpScale:SetWidth(260)
+        alertY = alertY - 54
+        UpdateParts()
+
+        if ns.Compat.flavor ~= "forever" then
+            local note = Caption(panel, "OPT_LEVELUP_FOREVER_ONLY", x + 20, alertY - 28, "small")
+            note:SetWidth(260)
+            note:SetWordWrap(true)
+            alertY = alertY - 28 - note:GetStringHeight()
+        end
+    end
+
     local goalHelp = Caption(panel, "OPT_GOALS_DESC", x, alertY - 30, "small")
     goalHelp:SetWidth(280)
     goalHelp:SetWordWrap(true)
@@ -285,25 +350,133 @@ function Options:BuildPetPanel(panel)
     widgets.maxLevel = Theme:CreateCheckbox(panel, "OPT_PET_MAX_LEVEL", PetGetter("showAtMaxLevel"), PetSetter("showAtMaxLevel"))
     widgets.maxLevel:SetPoint("TOPLEFT", x, y - 80)
 
+    Caption(panel, "OPT_PET_SPECIES", x, y - 114)
+    widgets.species = Theme:CreateDropdown(panel, 220, function()
+        local options = {}
+        for _, species in ipairs(ns.PetSprite.SPECIES) do
+            options[#options + 1] = { value = species, label = L["PET_SPECIES_" .. species] }
+        end
+        return options
+    end, function() return ns.Pet:GetSpecies() end, function(value)
+        ns.Pet:SetSpecies(value)
+        if self.refreshPetPreview then
+            self.refreshPetPreview()
+        end
+        if self.updatePetHarsh then
+            self.updatePetHarsh()
+        end
+    end)
+    widgets.species:SetPoint("TOPLEFT", x, y - 130)
+
     widgets.scale = Theme:CreateSlider(panel, "OPT_PET_SCALE", 1, 4, 0.5,
         function(value) return ("%gx"):format(value) end,
         PetGetter("scale"), PetSetter("scale"))
-    widgets.scale:SetPoint("TOPLEFT", x, y - 114)
+    widgets.scale:SetPoint("TOPLEFT", x, y - 180)
     widgets.scale:SetWidth(280)
 
     local resetPosition = Theme:CreateButton(panel, "OPT_RESET_POSITION", 160, 22, function()
         ns.Pet:ResetPosition()
     end)
-    resetPosition:SetPoint("TOPLEFT", x, y - 166)
+    resetPosition:SetPoint("TOPLEFT", x, y - 232)
 
     local demo = Theme:CreateButton(panel, "OPT_PET_DEMO", 160, 22, function()
         ns.Pet:Demo()
     end)
     demo:SetPoint("TOPLEFT", resetPosition, "BOTTOMLEFT", 0, -6)
 
-    local help = Caption(panel, "OPT_PET_DESC", x, y - 232, "small")
+    local help = Caption(panel, "OPT_PET_DESC", x, y - 298, "small")
     help:SetWidth(280)
     help:SetWordWrap(true)
+
+    ------------------------------------------------------------ What it says
+    -- Below the help text, whatever its height in each language.
+    local talk = CreateFrame("Frame", nil, panel)
+    talk:SetPoint("TOPLEFT", help, "BOTTOMLEFT", 0, -24)
+    talk:SetSize(300, 326)
+    SectionTitle(talk, "OPT_SECTION_PET_TALK", 0, 0)
+
+    Caption(talk, "OPT_PET_LANGUAGE", 0, -30)
+    widgets.petLocale = Theme:CreateDropdown(talk, 220, function()
+        local options = { { value = "auto", label = L["OPT_PET_LANGUAGE_AUTO"] } }
+        for _, code in ipairs(ns.AVAILABLE_LOCALES) do
+            if code ~= "auto" then
+                options[#options + 1] = { value = code, label = L["LANGUAGE_" .. code] }
+            end
+        end
+        return options
+    end, PetGetter("locale"), PetSetter("locale"))
+    widgets.petLocale:SetPoint("TOPLEFT", 0, -46)
+
+    -- Unfiltered voice: only the species that have one (Nihil) can use it.
+    widgets.harsh = Theme:CreateCheckbox(talk, "OPT_PET_HARSH", PetGetter("harsh"), PetSetter("harsh"))
+    widgets.harsh:SetPoint("TOPLEFT", 0, -82)
+    local harshHelp = Caption(talk, "OPT_PET_HARSH_DESC", 26, -106, "small")
+    harshHelp:SetWidth(254)
+    harshHelp:SetWordWrap(true)
+    -- Who the unfiltered voice was made for (Pet.DEDICATIONS).
+    local dedication = Theme:CreateText(talk, "small")
+    dedication:SetPoint("TOPLEFT", harshHelp, "BOTTOMLEFT", 0, -4)
+    dedication:SetTextColor(1, 0.62, 0.82)
+    local function UpdateHarsh()
+        local species = ns.Pet:GetSpecies()
+        local available = ns.PetTalk:HasHarshVoice(species)
+        widgets.harsh:SetEnabled(available)
+        widgets.harsh:SetAlpha(available and 1 or 0.4)
+        harshHelp:SetAlpha(available and 1 or 0.4)
+        local key = ns.Pet.DEDICATIONS[species]
+        dedication:SetText(available and key and (L[key] .. " " .. ns.Pet.HeartIcon(12)) or "")
+    end
+    self.updatePetHarsh = UpdateHarsh
+    UpdateHarsh()
+
+    local function UpdateCheer()
+        widgets.cheerInterval:SetAlpha(ns.settings.pet.cheer and 1 or 0.4)
+    end
+    widgets.cheer = Theme:CreateCheckbox(talk, "OPT_PET_CHEER", PetGetter("cheer"), function(value)
+        ns.settings.pet.cheer = value
+        UpdateCheer()
+    end)
+    widgets.cheer:SetPoint("TOPLEFT", 0, -158)
+
+    -- The slider moves over the steps of PetTalk.INTERVALS (20 s to 30 min).
+    local intervals = ns.PetTalk.INTERVALS
+    local function IntervalText(step)
+        local seconds = intervals[step] or intervals[#intervals]
+        if seconds < 60 then
+            return L["OPT_PET_CHEER_SECONDS"]:format(seconds)
+        end
+        return L["OPT_PET_CHEER_MINUTES"]:format(seconds / 60)
+    end
+    widgets.cheerInterval = Theme:CreateSlider(talk, "OPT_PET_CHEER_INTERVAL", 1, #intervals, 1,
+        function(step) return IntervalText(math.floor(step + 0.5)) end,
+        function()
+            -- The step closest to the saved number of seconds.
+            local seconds, best = ns.PetTalk:GetInterval(), 1
+            for step, value in ipairs(intervals) do
+                if math.abs(value - seconds) < math.abs(intervals[best] - seconds) then
+                    best = step
+                end
+            end
+            return best
+        end,
+        function(step)
+            ns.settings.pet.cheerSeconds = intervals[math.floor(step + 0.5)] or intervals[#intervals]
+            ns.PetTalk:Reschedule()
+        end)
+    widgets.cheerInterval:SetPoint("TOPLEFT", 20, -192)
+    widgets.cheerInterval:SetWidth(260)
+    UpdateCheer()
+
+    local testCheer = Theme:CreateButton(talk, "OPT_PET_CHEER_TEST", 160, 22, function()
+        if not ns.PetTalk:Cheer() then
+            ns:Print(L["OPT_PET_CHEER_HIDDEN"])
+        end
+    end)
+    testCheer:SetPoint("TOPLEFT", 0, -238)
+
+    local talkHelp = Caption(talk, "OPT_PET_CHEER_DESC", 0, -270, "small")
+    talkHelp:SetWidth(280)
+    talkHelp:SetWordWrap(true)
 
     ------------------------------------------------------------------ Preview
     x = COLUMN_X[2]
@@ -325,15 +498,16 @@ function Options:BuildPetPanel(panel)
     local index, elapsed = 1, 0
     local function ShowState()
         local state = states[index]
-        sprite:SetStage(ns.Pet.stage or 1)
+        sprite:SetSpecies(ns.Pet:GetSpecies())
         sprite:SetAnimation(state)
         if state == "ghost" then
             sprite:SetTint(unpack(ns.Pet.GHOST_TINT))
         else
             sprite:SetTint()
         end
-        caption:SetText(L["PET_STAGE_" .. sprite.stage] .. ": " .. L["PET_STATE_" .. state])
+        caption:SetText(L["PET_STATE_" .. state])
     end
+    self.refreshPetPreview = ShowState
     preview:SetScript("OnShow", function()
         elapsed = 0
         ShowState()
@@ -406,31 +580,75 @@ end
 -- Registration
 --------------------------------------------------------------------------------
 
-function Options:OnLogin()
-    local panel = CreateFrame("Frame")
-    panel.name = ns.title
-    panel:Hide()
-    panel:SetScript("OnShow", function()
-        if not self.widgets then
-            self:BuildPanel(panel)
-        end
-        self:Refresh()
+--- Gives a settings page a vertical scroll: the widgets are built inside a
+--- scroll child, so a page taller than the settings window is not cut off.
+local function CreateScrollPage(page)
+    local scroll = CreateFrame("ScrollFrame", nil, page, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 0, -4)
+    scroll:SetPoint("BOTTOMRIGHT", -28, 4)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(1, 1)
+    scroll:SetScrollChild(content)
+    scroll:SetScript("OnSizeChanged", function(_, width)
+        content:SetWidth(width)
     end)
-    panel:SetScript("OnHide", function() Theme:CloseMenus() end)
+    -- Open dropdown menus would stay behind while the page moves.
+    scroll:HookScript("OnVerticalScroll", function() Theme:CloseMenus() end)
+    page.scroll, page.content = scroll, content
+    return content
+end
+
+--- Sizes the scroll child to its lowest visible element.
+local function FitContent(content)
+    local top = content:GetTop()
+    if not top then
+        return
+    end
+    local lowest = top
+    local function Check(...)
+        for i = 1, select("#", ...) do
+            local object = select(i, ...)
+            local bottom = object:IsShown() and object:GetBottom()
+            if bottom and bottom < lowest then
+                lowest = bottom
+            end
+        end
+    end
+    Check(content:GetChildren())
+    Check(content:GetRegions())
+    content:SetHeight(math.max(1, top - lowest + 16))
+end
+
+--- Creates a settings page that builds its widgets on first show.
+local function CreatePage(name, build, isBuilt)
+    local page = CreateFrame("Frame")
+    page.name = name
+    page:Hide()
+    local content = CreateScrollPage(page)
+    page:SetScript("OnShow", function()
+        content:SetWidth(page.scroll:GetWidth())
+        if not isBuilt() then
+            build(content)
+        end
+        Options:Refresh()
+        -- Positions are only known once the frame is laid out.
+        C_Timer.After(0, function() FitContent(content) end)
+    end)
+    page:SetScript("OnHide", function() Theme:CloseMenus() end)
+    return page
+end
+
+function Options:OnLogin()
+    local panel = CreatePage(ns.title,
+        function(content) self:BuildPanel(content) end,
+        function() return self.widgets ~= nil end)
     self.panel = panel
 
     -- The pet has its own page under the addon's entry.
-    local petPanel = CreateFrame("Frame")
-    petPanel.name = L["OPT_SECTION_PET"]
+    local petPanel = CreatePage(L["OPT_SECTION_PET"],
+        function(content) self:BuildPetPanel(content) end,
+        function() return self.petWidgets ~= nil end)
     petPanel.parent = ns.title
-    petPanel:Hide()
-    petPanel:SetScript("OnShow", function()
-        if not self.petWidgets then
-            self:BuildPetPanel(petPanel)
-        end
-        self:Refresh()
-    end)
-    petPanel:SetScript("OnHide", function() Theme:CloseMenus() end)
     self.petPanel = petPanel
 
     if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then

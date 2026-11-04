@@ -1,12 +1,13 @@
 --[[----------------------------------------------------------------------------
     XPLedger - Pet
-    Optional pixel art murloc that keeps the player company, reacts to what
-    happens in game and can show the experience bar.
+    Optional pixel art companion (a murloc hatchling or Nihil, a Void hatchling)
+    that keeps the player company, reacts to what happens in game, can show
+    the experience bar and, when asked, cheers the player on (see Talk).
 
     States (highest priority first):
       dead / ghost  the player is dead (a ghost after releasing the spirit)
       reactions     a few seconds after an event, see REACTIONS: achievement
-                    (party), new growth stage (evolve), back to life (revive),
+                    (party), back to life (revive),
                     level up (happy), end of a fight (victory or relief),
                     quest turned in, fish caught, emotes, jumps, idle fidgets
       panic / fight in combat (panic below LOW_HEALTH, where health is readable)
@@ -17,15 +18,10 @@
       excited       the level bar is almost full
       idle
 
-    Growth stages follow the player level relative to the level cap, so they
-    work on every flavor:
-      1 hatchling  below a third of the cap
-      2 grown      up to the cap
-      3 veteran    at the cap (iron helmet and gilded spear)
-
-    Settings (settings.pet): enabled, asked, locked, scale, position, bar,
-    textMode, badge, clickAction ("poke" or "panel"), summaryTooltip,
-    showAtMaxLevel (unlike the shortcut, the pet stays at the level cap).
+    Settings (settings.pet): enabled, asked, species ("murloc" or "void"),
+    locked, scale, position, bar, textMode, badge, clickAction ("poke" or
+    "panel"), summaryTooltip, showAtMaxLevel (unlike the shortcut, the pet
+    stays at the level cap), cheer and cheerSeconds (see Talk).
 
       Left-click   say hello, or open the main window (clickAction)
       Right-click  lock / unlock the position
@@ -49,13 +45,31 @@ local LOW_HEALTH = 0.3        -- panic below this health fraction
 local EXCITED_PROGRESS = 0.9  -- nervous when the level bar is this full
 local IDLE_DELAY = 20         -- seconds idle before the first fidget
 local IDLE_MIN, IDLE_MAX = 15, 30
+local SPEECH_WIDTH = 190      -- longest line of the speech bubble before it wraps
+-- Clicking the pet over and over annoys it (see Pet:Poke).
+local ANNOY_GAP = 1.5         -- a click this soon after the previous one adds to the streak
+local ANNOY_AFTER = 3         -- clicks in a row it takes calmly
+local ANNOY_RESET = 4         -- seconds without clicks before it calms down
+local ANNOY_DURATION = 2.5    -- seconds an annoyed line stays up
+-- Past its last annoyed line, a species with a rage form (PetSprite.RAGE_FORMS)
+-- turns into it for a few seconds (see Pet:Transform).
+-- It is crushed into a ball of Void, bursts open like a big bang, stays a
+-- horror for a while and implodes back into itself at the end.
+local RAGE_DURATION = 5.5     -- seconds of the whole transformation
+local RAGE_CRUSH = 0.7        -- seconds being crushed into the ball
+local RAGE_BANG = 0.15        -- seconds bursting into the rage form
+local RAGE_SETTLE = 0.25      -- seconds settling down after the burst
+local RAGE_IMPLODE = 0.4      -- seconds imploding back at the end
+local RAGE_SCALE = 2          -- size of the rage form (its frames are 2x2 cells)
+local RAGE_OVERSHOOT = 2.25   -- size right after the burst
+local BALL_SCALE = 0.55       -- size of the ball of Void
+local CALM_DURATION = 3.5     -- seconds the line after the rage stays up
 
 -- Temporary reactions. A reaction does not interrupt another one with a
 -- higher priority. `effect` overrides the particles of the state, `lift` is
 -- the height of a jump in sprite pixels.
 local REACTIONS = {
     party = { state = "party", duration = 6, priority = 5 },
-    evolve = { state = "evolve", duration = 4, priority = 5 },
     revive = { state = "revive", duration = 3, priority = 4 },
     happy = { state = "happy", duration = 3.5, priority = 3 },
     victory = { state = "victory", duration = 2.4, priority = 3 },
@@ -71,7 +85,9 @@ local REACTIONS = {
     yawn = { state = "yawn", duration = 2.2, priority = 2 },
     eat = { state = "eat", duration = 3, priority = 2 },
     poke = { state = "happy", duration = 1.2, priority = 1 },
+    annoyed = { state = "fight", duration = 1.5, priority = 1, effect = "quest" },
     jump = { state = "jump", duration = 0.6, priority = 1, lift = 7 },
+    rage = { state = "rage", duration = RAGE_DURATION, priority = 6, effect = "rage" },
     -- Fidgets while idle.
     idleYawn = { state = "yawn", duration = 2.2, priority = 0 },
     idleJuggle = { state = "juggle", duration = 4, priority = 0 },
@@ -141,15 +157,32 @@ local function IsFishingSpell(spellID)
     return name ~= nil and name == fishing
 end
 
---- Growth stage for a level (1 hatchling, 2 grown, 3 veteran).
-function Pet:GetStage(level)
-    local maxLevel = Compat.GetMaxLevel()
-    if level >= maxLevel then
-        return 3
-    elseif level < math.max(2, math.floor(maxLevel / 3)) then
-        return 1
+--- The chosen companion: "murloc" or "void".
+function Pet:GetSpecies()
+    local species = Settings().species
+    return PetSprite.SHEETS[species] and species or "murloc"
+end
+
+--- Localized name of a species (the active one by default).
+function Pet:GetName(species)
+    return ns.L["PET_NAME_" .. (species or self:GetSpecies())]
+end
+
+--- Switches the companion and greets the player in its own words.
+function Pet:SetSpecies(species)
+    Settings().species = species
+    if self.frame then
+        -- The rage form is drawn only on the sheet of the species that has it.
+        if self:IsRaging() then
+            self.reaction = nil
+            self:EndRage()
+        end
+        self:Refresh()
+        if self.frame:IsShown() then
+            self:React("wave")
+            self:Say(ns.PetTalk:Event("hello"), 3)
+        end
     end
-    return 2
 end
 
 --- Size of a sprite pixel in screen pixels.
@@ -207,6 +240,11 @@ function Pet:Build()
     end
     speech.text = Theme:CreateText(speech, "normal", "CENTER")
     speech.text:SetPoint("CENTER")
+    -- Theme texts stay on one line; long phrases need to wrap (see Pet:Say).
+    speech.text:SetWordWrap(true)
+    if speech.text.SetMaxLines then
+        speech.text:SetMaxLines(0)
+    end
     speech:Hide()
     frame.speech = speech
 
@@ -268,9 +306,9 @@ function Pet:SetupScripts(frame)
     end)
     frame:SetScript("OnEnter", function(selfFrame)
         GameTooltip:SetOwner(selfFrame, "ANCHOR_NONE")
-        GameTooltip:SetPoint(self:GetTooltipAnchor())
         self:FillTooltip(GameTooltip)
         GameTooltip:Show()
+        self:PlaceTooltip(GameTooltip)
     end)
     frame:SetScript("OnLeave", function(selfFrame)
         if GameTooltip:IsOwned(selfFrame) then
@@ -282,21 +320,62 @@ function Pet:SetupScripts(frame)
     end)
 end
 
---- Places the tooltip below or above the pet depending on screen space.
-function Pet:GetTooltipAnchor()
+--- Lowest shown part of the pet: the text, the bar or the pet itself.
+function Pet:GetBottomPart()
     local frame = self.frame
-    local _, centerY = frame:GetCenter()
-    if centerY and centerY > UIParent:GetHeight() / 2 then
-        return "TOP", frame, "BOTTOM", 0, -4
+    if frame.xpText:IsShown() then
+        return frame.xpText
+    elseif frame.xpBar:IsShown() then
+        return frame.xpBar
     end
-    return "BOTTOM", frame, "TOP", 0, 4
+    return frame
+end
+
+--- Places the (already filled and shown) tooltip under the pet, never above
+--- it: the speech bubble goes there, wider than the pet. When the pet is too
+--- close to the bottom of the screen, the tooltip opens beside it instead,
+--- towards the side with more room, growing upwards.
+function Pet:PlaceTooltip(tooltip)
+    local frame = self.frame
+    local below = self:GetBottomPart()
+    tooltip:ClearAllPoints()
+    -- Room under the pet and height of the tooltip, both in screen pixels.
+    local bottom = below:GetBottom()
+    local room = bottom and bottom * below:GetEffectiveScale() or 0
+    local needed = (tooltip:GetHeight() + 4) * tooltip:GetEffectiveScale()
+    if room >= needed then
+        tooltip:SetPoint("TOP", below, "BOTTOM", 0, -4)
+        return
+    end
+    local centerX = frame:GetCenter()
+    if centerX and centerX > UIParent:GetWidth() / 2 then
+        tooltip:SetPoint("BOTTOMRIGHT", frame, "BOTTOMLEFT", -4, 0)
+    else
+        tooltip:SetPoint("BOTTOMLEFT", frame, "BOTTOMRIGHT", 4, 0)
+    end
+end
+
+-- Dedication of a species' unfiltered voice (see UI\Pet\Talk.lua), shown
+-- under its checkbox in the options (a locale key).
+Pet.DEDICATIONS = {
+    void = "PET_DEDICATION_void",
+}
+
+--- Inline pixel art heart for a text: the heart icon of the effects (ICONS
+--- in tools/pet/murloc-art.js, first icon of the last row of the sheet).
+function Pet.HeartIcon(size)
+    local sheetWidth = PetSprite.SIZE * PetSprite.COLUMNS
+    local sheetHeight = PetSprite.SIZE * PetSprite.ROWS
+    local top = (PetSprite.ROWS - 1) * PetSprite.SIZE
+    return ("|T%s:%d:%d:0:0:%d:%d:0:8:%d:%d|t"):format(PetSprite.GetTexture("murloc"), size, size,
+        sheetWidth, sheetHeight, top, top + 8)
 end
 
 function Pet:FillTooltip(tooltip)
     local L = ns.L
     local accent, muted = Theme.colors.accent, Theme.colors.muted
-    tooltip:AddLine(L["PET_NAME"], accent[1], accent[2], accent[3])
-    tooltip:AddLine(L["PET_STAGE_" .. self.sprite.stage] .. "  ·  " .. L["TOOLTIP_LEVEL"]:format(self.level), 1, 1, 1)
+    tooltip:AddLine(self:GetName(), accent[1], accent[2], accent[3])
+    tooltip:AddLine(L["TOOLTIP_LEVEL"]:format(self.level), 1, 1, 1)
     tooltip:AddLine(L["PET_STATE_" .. (self.state or "idle")], 0.6, 0.85, 1)
     if Settings().summaryTooltip then
         tooltip:AddLine(" ")
@@ -316,6 +395,8 @@ function Pet:RefreshTooltip()
         GameTooltip:ClearLines()
         self:FillTooltip(GameTooltip)
         GameTooltip:Show()
+        -- The height may have changed.
+        self:PlaceTooltip(GameTooltip)
     end
 end
 
@@ -402,18 +483,126 @@ function Pet:React(name)
     return true
 end
 
---- Shows a short text in the speech bubble.
+--- Shows a text in the speech bubble. Long lines wrap at SPEECH_WIDTH.
 function Pet:Say(text, duration)
+    if not text then
+        return
+    end
     local speech = self.frame.speech
-    speech.text:SetText(text)
-    speech:SetSize(speech.text:GetStringWidth() + 14, speech.text:GetStringHeight() + 10)
+    local label = speech.text
+    -- Measure the text on one line, then wrap it if it is too long.
+    label:SetWidth(0)
+    label:SetText(text)
+    local width = math.min(label:GetStringWidth(), SPEECH_WIDTH)
+    label:SetWidth(width + 1)
+    speech:SetSize(width + 15, label:GetStringHeight() + 10)
     speech.hideAt = GetTime() + (duration or 2.5)
     speech:Show()
 end
 
+--- Left-click. The first clicks get a cheer or the pet's usual sound; keep
+--- clicking without a pause and it gets more and more annoyed, line after
+--- line (events.annoyed), until it is left alone for ANNOY_RESET seconds.
 function Pet:Poke()
+    -- Nothing gets through to it while it is a horror.
+    if self:IsRaging() then
+        return
+    end
+    local now = GetTime()
+    local since = self.lastPokeAt and now - self.lastPokeAt or math.huge
+    self.lastPokeAt = now
+    self.pokeStreak = since <= ANNOY_GAP and (self.pokeStreak or 0) + 1 or 1
+    if since >= ANNOY_RESET then
+        self.annoyStep = 0
+    end
+
+    -- Annoyed after ANNOY_AFTER quick clicks, and it stays annoyed (moving on
+    -- to the next line) while the clicks keep coming before it calms down.
+    local annoyed = (self.annoyStep or 0) > 0 or self.pokeStreak > ANNOY_AFTER
+    if annoyed then
+        self.annoyStep = (self.annoyStep or 0) + 1
+        if self.annoyStep > ns.PetTalk:GetAnnoyedCount() and PetSprite.RAGE_FORMS[self:GetSpecies()] then
+            self:Transform()
+            return
+        end
+        self:React("annoyed")
+        self:Say(ns.PetTalk:GetAnnoyedLine(self.annoyStep), ANNOY_DURATION)
+        return
+    end
     self:React("poke")
-    self:Say(ns.L["PET_SPEECH_" .. math.random(1, 4)], 1.8)
+    self:Say(ns.PetTalk:GetPokeLine())
+end
+
+--- Turns into the rage form for RAGE_DURATION seconds (the animation
+--- happens in UpdateRage, the way back in EndRage).
+function Pet:Transform()
+    if self:React("rage") then
+        self:Say(ns.PetTalk:Event("transform"), RAGE_DURATION)
+    end
+end
+
+function Pet:IsRaging()
+    local reaction = self.reaction
+    return reaction ~= nil and reaction.name == "rage" and GetTime() < reaction.untilTime
+end
+
+--- Back to its usual size after the rage form, a little ashamed. Combat or
+--- death cut it short without a word.
+function Pet:EndRage()
+    self.raging = false
+    self.annoyStep, self.pokeStreak = 0, 0
+    self.sprite:SetScale(1)
+    self:PlaceSpeech(1)
+    if self.dead or self.ghost or self.inCombat then
+        self.frame.speech:Hide()
+    else
+        self.effects:Burst("pop")
+        self:Say(ns.PetTalk:Event("calm"), CALM_DURATION)
+    end
+end
+
+--- Animation and size of the transformation `t` seconds after it started:
+--- crushed into a ball, a burst into the horror, the horror, and the
+--- implosion. Returns the scale and the animation to show.
+local function RageFrame(t, left)
+    if t < RAGE_CRUSH then
+        local progress = t / RAGE_CRUSH
+        return 1 - (1 - BALL_SCALE) * progress * progress, "collapse"
+    elseif t < RAGE_CRUSH + RAGE_BANG then
+        local progress = (t - RAGE_CRUSH) / RAGE_BANG
+        return BALL_SCALE + (RAGE_OVERSHOOT - BALL_SCALE) * progress, "rage", "bang"
+    elseif left < RAGE_IMPLODE then
+        local progress = math.max(0, left) / RAGE_IMPLODE
+        return BALL_SCALE + (RAGE_SCALE - BALL_SCALE) * progress, "rage"
+    elseif t < RAGE_CRUSH + RAGE_BANG + RAGE_SETTLE then
+        local progress = (t - RAGE_CRUSH - RAGE_BANG) / RAGE_SETTLE
+        return RAGE_OVERSHOOT + (RAGE_SCALE - RAGE_OVERSHOOT) * progress, "rage", nil, true
+    end
+    return RAGE_SCALE, "rage", nil, true
+end
+
+--- Plays the transformation; called every frame while it lasts.
+function Pet:UpdateRage(reaction, now)
+    local scale, animation, phase, shaking = RageFrame(now - reaction.startedAt, reaction.untilTime - now)
+    self.sprite:SetAnimation(animation)
+    if phase == "bang" and not reaction.banged then
+        reaction.banged = true
+        self.effects:Burst("bang")
+    elseif animation == "collapse" and not reaction.crushed then
+        reaction.crushed = true
+        self.effects:Burst("implode")
+    elseif reaction.untilTime - now < RAGE_IMPLODE and not reaction.imploded then
+        reaction.imploded = true
+        self.effects:Burst("implode")
+    end
+    return scale, shaking and math.random(-1, 1) or 0
+end
+
+--- Keeps the speech bubble above the drawing when it grows.
+function Pet:PlaceSpeech(scale)
+    local speech = self.frame.speech
+    speech:ClearAllPoints()
+    speech:SetPoint("BOTTOM", self.frame, "TOP", 0, 2 + self.frame:GetHeight() * (scale - 1))
 end
 
 --------------------------------------------------------------------------------
@@ -431,11 +620,11 @@ function Pet:UpdateLife(silent)
     if (dead or ghost) and not wasDown then
         self.reaction, self.pendingOutcome, self.inCombat = nil, nil, false
         if not silent then
-            self:Say(ns.L["PET_SPEECH_DEAD"], 2.5)
+            self:Say(ns.PetTalk:Event("dead"), 2.5)
         end
     elseif wasDown and not dead and not ghost and not silent then
         self:React("revive")
-        self:Say(ns.L["PET_SPEECH_REVIVE"], 3)
+        self:Say(ns.PetTalk:Event("revive"), 3)
     end
     self:UpdateState()
 end
@@ -473,15 +662,24 @@ end
 
 function Pet:OnExperienceGained(gain)
     if gain.source == "mob" then
+        self:Remember("kill")
         if self.inCombat then
             self.combatKills = (self.combatKills or 0) + 1
         elseif self.pendingOutcome then
             self:ResolveOutcome(true)
         end
     elseif gain.source == "quest" then
+        self:Remember("quest")
         self:React("quest")
     end
     self:UpdateExperience()
+end
+
+--- Notes the time of something the player did, so the cheers can talk
+--- about it (see PetTalk:GetContext).
+function Pet:Remember(action)
+    self.recent = self.recent or {}
+    self.recent[action] = GetTime()
 end
 
 function Pet:OnJump()
@@ -504,6 +702,9 @@ function Pet:OnEmote(token)
         return
     end
     self.lastEmoteAt = now
+    if reaction == "dance" then
+        self:Remember("dancing")
+    end
     self:React(reaction)
 end
 
@@ -535,8 +736,13 @@ function Pet:Poll()
     if self.pendingOutcome and GetTime() >= self.pendingOutcome.at then
         self:ResolveOutcome(false)
     end
+    -- A fight or a death ends the rage form at once.
+    if self:IsRaging() and (self.inCombat or self.dead or self.ghost) then
+        self.reaction = nil
+    end
     self:UpdateIdleFidgets()
     self:UpdateState()
+    ns.PetTalk:Update()
 end
 
 --------------------------------------------------------------------------------
@@ -548,23 +754,38 @@ function Pet:OnUpdate(elapsed)
     self.effects:Update(elapsed)
     local now = GetTime()
 
-    if self.state == "evolve" then
-        self.sprite.glow:SetAlpha(0.7 * math.abs(math.sin(now * 5)))
+    -- The rage form (see UpdateRage).
+    local reaction = self.reaction
+    if reaction and reaction.name == "rage" and now >= reaction.untilTime then
+        self:UpdateState()
+        reaction = self.reaction
+    end
+    local scale, shake = 1, 0
+    if self.state == "rage" and reaction and reaction.name == "rage" then
+        scale, shake = self:UpdateRage(reaction, now)
+        self.raging = true
+    elseif self.raging then
+        self:EndRage()
+    end
+    if scale ~= self.sprite.scale then
+        self.sprite:SetScale(scale)
+        self:PlaceSpeech(scale)
     end
 
     -- Vertical offset of the drawing: jump arc or ghostly floating.
     local offset = 0
-    local reaction = self.reaction
     if reaction and reaction.lift and now < reaction.untilTime and self.state == reaction.state then
         local progress = (now - reaction.startedAt) / (reaction.untilTime - reaction.startedAt)
         offset = math.sin(progress * math.pi) * reaction.lift
     elseif self.state == "ghost" then
         offset = 1.5 + math.sin(now * 2.2) * 1.5
     end
-    offset = ns.Round(offset * self:GetPixel())
-    if offset ~= self.offset then
-        self.offset = offset
-        self.sprite:SetOffset(0, offset)
+    local pixel = self:GetPixel()
+    offset = ns.Round(offset * pixel)
+    shake = ns.Round(shake * pixel)
+    if offset ~= self.offset or shake ~= self.shake then
+        self.offset, self.shake = offset, shake
+        self.sprite:SetOffset(shake, offset)
     end
 
     local speech = self.frame.speech
@@ -599,7 +820,7 @@ function Pet:UpdateExperience(silent)
     if excited and level and self.excitedLevel ~= level then
         self.excitedLevel = level
         if not silent and frame:IsShown() then
-            self:Say(ns.L["PET_SPEECH_EXCITED"], 3)
+            self:Say(ns.PetTalk:Event("excited"), 3)
         end
     end
     self.excited = excited
@@ -645,8 +866,7 @@ function Pet:UpdateVisibility()
 end
 
 function Pet:Refresh()
-    local stage = self.demo and self.demo.stage or self.stage
-    self.sprite:SetStage(stage)
+    self.sprite:SetSpecies(self:GetSpecies())
     local badge = self.frame.badge
     badge:SetShown(Settings().badge)
     badge.text:SetText(self.level)
@@ -658,7 +878,6 @@ end
 --- snapshot is updated, so the level is passed in instead of read back.
 function Pet:SetLevel(level)
     self.level = level
-    self.stage = self:GetStage(level)
     if self.frame then
         self:UpdateVisibility()
         self:Refresh()
@@ -685,7 +904,7 @@ function Pet:SetEnabled(enabled)
     self:UpdateVisibility()
     if enabled then
         self:React("happy")
-        self:Say(ns.L["PET_SPEECH_HELLO"], 3)
+        self:Say(ns.PetTalk:Event("hello"), 3)
     else
         ns:Print(ns.L["PET_HIDDEN"])
     end
@@ -757,25 +976,21 @@ function Pet:AskIfWanted()
 end
 
 --------------------------------------------------------------------------------
--- Demo: every state of a stage, for testing and showing off
+-- Demo: every state, for testing and showing off
 --------------------------------------------------------------------------------
 
-function Pet:Demo(stage)
+function Pet:Demo()
     if self.demoTicker then
         self.demoTicker:Cancel()
-    end
-    stage = tonumber(stage)
-    if not stage or stage < 1 or stage > 3 then
-        stage = self.stage
     end
     local L = ns.L
     local index = 0
     local function Next()
         index = index + 1
         local state = Pet.STATES[index]
-        self.demo = state and { stage = stage, state = state } or nil
+        self.demo = state and { state = state } or nil
         if state then
-            self:Say(L["PET_STAGE_" .. stage] .. ": " .. L["PET_STATE_" .. state], DEMO_STEP)
+            self:Say(L["PET_STATE_" .. state], DEMO_STEP)
         else
             self.demoTicker = nil
         end
@@ -791,16 +1006,9 @@ end
 --------------------------------------------------------------------------------
 
 function Pet:OnLevelUp(newLevel)
-    local L = ns.L
-    local previousStage = self.stage
     self:SetLevel(newLevel)
-    if self.stage ~= previousStage then
-        self:React("evolve")
-        self:Say(L["PET_SPEECH_EVOLVE"], 3.5)
-    else
-        self:React("happy")
-        self:Say(L["PET_SPEECH_LEVEL"]:format(newLevel), 3)
-    end
+    self:React("happy")
+    self:Say(ns.PetTalk:Event("level", newLevel), 3)
 end
 
 function Pet:RegisterEvents()
@@ -821,7 +1029,7 @@ function Pet:RegisterEvents()
     end)
     ns:RegisterEvent("ACHIEVEMENT_EARNED", function()
         if self:React("party") then
-            self:Say(ns.L["PET_SPEECH_ACHIEVEMENT"], 3.5)
+            self:Say(ns.PetTalk:Event("achievement"), 3.5)
         end
     end)
     ns:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START", function(_, unit, _, spellID)
@@ -838,7 +1046,7 @@ function Pet:RegisterEvents()
     end)
     ns:RegisterEvent("LOOT_OPENED", function()
         if IsFishingLoot and IsFishingLoot() and self:React("catch") then
-            self:Say(ns.L["PET_SPEECH_CATCH"], 2.5)
+            self:Say(ns.PetTalk:Event("catch"), 2.5)
         end
     end)
 

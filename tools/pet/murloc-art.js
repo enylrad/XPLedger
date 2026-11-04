@@ -10,11 +10,16 @@
     The figure is drawn on a padded canvas, so it can be moved, sheared or
     sheared (staggering) before being cropped into its 32x32 cell.
 
-    Sheet layout (one sheet per growth stage, 32x32 cells, 4 columns x 32 rows):
+    Sheet layout (32x32 cells, 4 columns x 32 rows; the Void hatchling of void-art.js
+    uses the same poses and rows):
        0 idle      1 happy     2 party     3 fight     4 swim      5 sleep
        6 victory   7 relief    8 dead      9 ghost    10 revive   11 panic
       12 rest     13 dance    14 wave     15 fish     16 eat      17 yawn
-      18 juggle   19 scratch  20 excited  21 jump     22-30 unused
+      18 juggle   19 scratch  20 excited  21 jump
+      22-25 rage form: 64x64 frames in 2x2 cells, two per pair of rows, only
+            for the species that have one (see RAGE in void-art.js)
+      26 collapse into the rage form (same species only, see COLLAPSE)
+      27-30 unused
     Row 31 holds the 8x8 effect icons (ICONS, 4 per row of the cell).
     The Lua side (UI/Pet/Sprite.lua) must use the same row order.
 */
@@ -54,15 +59,16 @@ const PALETTE = {
 //------------------------------------------------------------------------------
 
 class Canvas {
-    /** A SIZE x SIZE canvas that also accepts `pad` pixels on every side. */
-    constructor(pad = 0) {
+    /** A size x size canvas (SIZE by default) that also accepts `pad` pixels on every side. */
+    constructor(pad = 0, size = SIZE) {
+        this.size = size;
         this.pad = pad;
-        this.width = SIZE + pad * 2;
+        this.width = size + pad * 2;
         this.px = new Array(this.width * this.width).fill('.');
     }
 
     inside(x, y) {
-        return x >= -this.pad && y >= -this.pad && x < SIZE + this.pad && y < SIZE + this.pad;
+        return x >= -this.pad && y >= -this.pad && x < this.size + this.pad && y < this.size + this.pad;
     }
 
     get(x, y) {
@@ -80,8 +86,8 @@ class Canvas {
 
     /** Calls fn(x, y, color) for every pixel, padding included. */
     each(fn) {
-        for (let y = -this.pad; y < SIZE + this.pad; y++) {
-            for (let x = -this.pad; x < SIZE + this.pad; x++) {
+        for (let y = -this.pad; y < this.size + this.pad; y++) {
+            for (let x = -this.pad; x < this.size + this.pad; x++) {
                 fn(x, y, this.get(x, y));
             }
         }
@@ -99,7 +105,7 @@ class Canvas {
 
     /** Adds a 1px contour around the opaque pixels (4-neighbourhood). */
     outline(color = 'K') {
-        const result = new Canvas(this.pad);
+        const result = new Canvas(this.pad, this.size);
         result.draw(this);
         this.each((x, y, c) => {
             if (c !== '.') {
@@ -119,7 +125,7 @@ class Canvas {
 
     /** Classic pixel art lighting: dark rim bottom-right, light rim top-left. */
     autoshade(base = 'G', dark = 'g', light = 'h') {
-        const result = new Canvas(this.pad);
+        const result = new Canvas(this.pad, this.size);
         result.draw(this);
         this.each((x, y, c) => {
             if (c !== base) {
@@ -155,7 +161,7 @@ class Canvas {
 
     /** Returns a copy leaning to the right (`amount` pixels per row above `pivotY`). */
     sheared(amount, pivotY = 30) {
-        const result = new Canvas(this.pad);
+        const result = new Canvas(this.pad, this.size);
         this.each((x, y, c) => {
             if (c !== '.') {
                 result.set(x + Math.round((pivotY - y) * amount), y, c);
@@ -357,14 +363,6 @@ const CRESTS = {
         '.RRr',
         'RRrr',
     ]),
-    big: symmetric([
-        '...R',
-        '..Rr',
-        'R.Rr',
-        'RRrr',
-        'RrRr',
-        'RRRR',
-    ]),
 };
 
 const EARS = {
@@ -374,23 +372,7 @@ const EARS = {
         'RrR.',
         '.RR.',
     ],
-    big: [
-        'R....',
-        'RR...',
-        'RrR..',
-        'RrrR.',
-        'RRrR.',
-        '.RRR.',
-    ],
 };
-
-const HELMET = symmetric([
-    '.....SSSS',
-    '...SSSSSS',
-    '..SSSSSSS',
-    '.SSSSSKSS',
-    'sssssssss',
-]);
 
 const PARTY_HAT = [
     '..Q..',
@@ -509,51 +491,25 @@ function mouthRows(type, width, teeth) {
 }
 
 //------------------------------------------------------------------------------
-// Growth stages
+// Proportions
 //------------------------------------------------------------------------------
 
-const STAGES = {
-    // Hatchling: small body, huge head and eyes, no teeth.
-    1: {
-        head: { cx: 16, cy: 18, rx: 8.2, ry: 6.6 },
-        body: { cx: 16, cy: 25, rx: 5.6, ry: 4.4 },
-        belly: { cx: 16, cy: 26.2, rx: 3.4, ry: 2.8 },
-        feet: { y: 29, dx: 3, rx: 2.2, ry: 1.6 },
-        eyes: { x: 8, y: 14 },
-        mouth: { y: 21, width: 8, teeth: false },
-        crest: { rows: CRESTS.small, y: 9 },
-        ears: { rows: EARS.small, x: 5, y: 15 },
-        shoulder: { x: 11, y: 24.2 },
-        arm: { radius: 1.3, reach: 0.7 },
-        hat: { x: 17, y: 6 },
-        weapon: { length: 8, tip: 'w' },
-        shadow: 6,
-    },
-    // Grown murloc: big head, wide toothy mouth.
-    2: {
-        head: { cx: 16, cy: 14, rx: 10, ry: 8 },
-        body: { cx: 16, cy: 23, rx: 7, ry: 6 },
-        belly: { cx: 16, cy: 24.6, rx: 4.5, ry: 3.8 },
-        feet: { y: 28.6, dx: 3.6, rx: 2.6, ry: 1.8 },
-        eyes: { x: 8, y: 9 },
-        mouth: { y: 16, width: 12, teeth: true },
-        crest: { rows: CRESTS.big, y: 2 },
-        ears: { rows: EARS.big, x: 2, y: 9 },
-        shoulder: { x: 9.5, y: 20.5 },
-        arm: { radius: 1.6, reach: 1 },
-        hat: { x: 18, y: 1 },
-        weapon: { length: 13, tip: 'S' },
-        shadow: 8,
-    },
+// The hatchling: small body, huge head and eyes, no teeth.
+const MURLOC = {
+    head: { cx: 16, cy: 18, rx: 8.2, ry: 6.6 },
+    body: { cx: 16, cy: 25, rx: 5.6, ry: 4.4 },
+    belly: { cx: 16, cy: 26.2, rx: 3.4, ry: 2.8 },
+    feet: { y: 29, dx: 3, rx: 2.2, ry: 1.6 },
+    eyes: { x: 8, y: 14 },
+    mouth: { y: 21, width: 8, teeth: false },
+    crest: { rows: CRESTS.small, y: 9 },
+    ears: { rows: EARS.small, x: 5, y: 15 },
+    shoulder: { x: 11, y: 24.2 },
+    arm: { radius: 1.3, reach: 0.7 },
+    hat: { x: 17, y: 6 },
+    weapon: { length: 8, tip: 'w' },
+    shadow: 6,
 };
-
-// Veteran: the grown murloc with an iron helmet and a gilded spear.
-STAGES[3] = Object.assign({}, STAGES[2], {
-    crest: { rows: CRESTS.big, y: 0 },
-    helmet: { rows: HELMET, x: 7, y: 4 },
-    hat: { x: 18, y: 0 },
-    weapon: { length: 13, tip: 'Y' },
-});
 
 //------------------------------------------------------------------------------
 // Poses
@@ -668,9 +624,6 @@ function drawFigure(S, pose) {
     stamp(figure, mouth, Math.round(16 - mouth[0].length / 2), S.mouth.y + lift);
 
     // Headwear.
-    if (S.helmet) {
-        layer((c) => stamp(c, S.helmet.rows, S.helmet.x, S.helmet.y + lift), false);
-    }
     if (pose.hat) {
         layer((c) => stamp(c, PARTY_HAT, S.hat.x, S.hat.y + lift), false);
     }
@@ -740,8 +693,8 @@ function drawFigure(S, pose) {
     return figure;
 }
 
-function compose(stageId, pose) {
-    const S = STAGES[stageId];
+function compose(pose) {
+    const S = MURLOC;
     const out = new Canvas();
     let figure = drawFigure(S, pose);
     const shadow = pose.noShadow ? 0 : S.shadow * ((pose.dy || 0) < 0 ? 0.7 : 1);
@@ -993,4 +946,9 @@ const ICONS = [
     ],
 ];
 
-module.exports = { SIZE, PALETTE, STAGES, ANIMATIONS, ICONS, compose };
+module.exports = {
+    SIZE, PAD, PALETTE, ANIMATIONS, ICONS, compose,
+    // Shared with void-art.js.
+    Canvas, ellipse, capsule, line, stamp, stampCentered, roundShade, mouthRows,
+    PROPS, PARTY_HAT, ARMS, LEGS, juggleFish,
+};

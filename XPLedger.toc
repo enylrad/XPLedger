@@ -21,6 +21,8 @@ Core\Core.lua
 
 Locales\enUS.lua
 Locales\esES.lua
+Locales\PetPhrases_enUS.lua
+Locales\PetPhrases_esES.lua
 Core\Locale.lua
 Core\Compat.lua
 Core\Database.lua
@@ -34,6 +36,9 @@ Core\Records.lua
 Core\Goals.lua
 Core\Sessions.lua
 Core\Stats.lua
+Core\LevelUpStats.lua
+Core\Spells.lua
+Core\Zones.lua
 Core\Export.lua
 
 UI\Theme.lua
@@ -43,7 +48,9 @@ UI\Tooltip.lua
 UI\Launcher.lua
 UI\Pet\Sprite.lua
 UI\Pet\Effects.lua
+UI\Pet\Talk.lua
 UI\Pet\Pet.lua
+UI\LevelUp.lua
 UI\Graph.lua
 UI\MainPanel.lua
 UI\Views\Overview.lua

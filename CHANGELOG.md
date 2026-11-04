@@ -4,6 +4,69 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A second pet to choose from: Nihil, a little Void hatchling.
+- Optional cheers (off by default): every so often (from 20 seconds to 30 minutes, 5 minutes
+  by default) the pet says something in its speech bubble that fits what you are doing, with
+  over 100 lines per pet. Clicking the pet makes it talk too, and if you keep clicking it gets
+  annoyed in its own way. The murloc talks mostly in murloc; Nihil is a sweet pessimist. The
+  pet's language can be set apart from the addon's.
+- Unfiltered Nihil (off by default): the same Nihil with harsher lines that mock how you
+  play, without swearing.
+- Push Nihil past its last annoyed line and it collapses into a ball of Void that bursts
+  into a hulking Void horror twice its size for a few seconds, then shrinks back.
+- WoW: Forever: a level up summary in the middle of the screen with your portrait, the stats
+  gained, the new abilities at your trainer and the recommended zones for your faction.
+  `/xpl levelup demo` shows it with sample data.
+- Scroll bars on the options pages.
+
+### Changed
+
+- The murloc stays a hatchling: the grown and veteran stages are gone.
+- Long speech bubbles wrap onto several lines.
+- The pet's tooltip opens below it (beside it near the bottom of the screen), so it no
+  longer covers the speech bubble.
+- `/xpl pet demo` no longer takes a stage.
+
+### Fixed
+
+- The pet's effects no longer create garbage on every frame.
+
+## [Unreleased] (Español)
+
+### Añadido
+
+- Una segunda mascota a elegir: Nihil, una pequeña cría del Vacío.
+- Ánimos opcionales (desactivados por defecto): cada cierto tiempo (de 20 segundos a
+  30 minutos, 5 minutos por defecto) la mascota dice en su bocadillo algo acorde con lo que
+  estás haciendo, con más de 100 frases por mascota. Si haces clic en ella, también te
+  habla, y si no paras de hacer clic se enfada a su manera. El múrloc habla casi todo en
+  múrloc; Nihil es un pesimista entrañable. El idioma de la mascota puede ser distinto del del addon.
+- Nihil sin filtro (desactivado por defecto): el mismo Nihil con frases más duras que se
+  burlan de cómo juegas, sin palabrotas.
+- Si sigues haciendo clic después de la última frase de enfado de Nihil, se comprime en una
+  bola de Vacío que estalla en un horror del Vacío del doble de tamaño durante unos
+  segundos, y luego vuelve a encogerse.
+- WoW: Forever: un resumen de la subida de nivel en el centro de la pantalla con tu retrato,
+  las estadísticas ganadas, las nuevas habilidades del instructor y las zonas recomendadas
+  para tu facción. `/xpl levelup demo` lo muestra con datos de ejemplo.
+- Barras de desplazamiento en las páginas de opciones.
+
+### Cambiado
+
+- El múrloc se queda en cría: desaparecen las fases de adulto y veterano.
+- Los bocadillos largos se reparten en varias líneas.
+- El tooltip de la mascota se abre debajo (al lado si está pegada al borde inferior de la
+  pantalla), así que ya no tapa el bocadillo.
+- `/xpl pet demo` ya no admite una fase.
+
+### Corregido
+
+- Los efectos de la mascota ya no generan basura en cada fotograma.
+
 ## [0.2.0] - 2026-10-11
 
 ### Added

@@ -41,9 +41,15 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
 - **Session summary**: the last session is summarized at login, and `/xpl session` compares
   the current one with the previous.
 - **Level up summary** in chat: played and real time spent on the level and its main source.
-- **Murloc pet** (optional, asked on the first login): a pixel art murloc that levels up with
-  you. It grows from hatchling to grown murloc and, at the level cap, to a veteran with a
-  helmet.
+- **Pet** (optional, asked on the first login): a pixel art companion that levels up with
+  you. Pick a murloc hatchling or Nihil, a little Void hatchling.
+  - It can cheer you on now and then (off by default, every 20 seconds to 30 minutes) with
+    text in its speech bubble that fits what you are doing: fighting, low on health,
+    questing, in a dungeon, swimming, fishing, flying, dancing, resting, dead, about to level
+    up... Over 100 lines per pet. Click it and it talks too; keep clicking and it gets
+    annoyed in its own way (push Nihil too far and it turns into a Void horror for a few
+    seconds). The murloc talks mostly in murloc; Nihil is a sweet pessimist, with an optional
+    unfiltered voice that mocks how you play. Their language can differ from the addon's.
   - It reacts to what you do: cheers on a level up, parties on an achievement, fights in
     combat (and panics at low health where the game shows it), celebrates a win or wipes its
     brow when you run away, is knocked out when you die and floats as a ghost until you are
@@ -81,8 +87,8 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
 | `/xpl goal` / `/xpl goal clear` | Show or remove the level goal |
 | `/xpl session` | Summary of the current session |
 | `/xpl export [runs]` | Copy your levels (or runs) as CSV |
-| `/xpl pet` | Show or hide the murloc pet |
-| `/xpl pet reset` / `/xpl pet demo [1-3]` | Move the pet back to its place, or play every animation (of a stage) |
+| `/xpl pet` | Show or hide the pet |
+| `/xpl pet reset` / `/xpl pet demo` | Move the pet back to its place, or play every animation |
 | `/xpl help` | List the commands |
 
 ## How it works
@@ -132,13 +138,16 @@ The repository can be linked into every installed flavor with a directory juncti
 
 Then `/reload` in game after each change. Enable Lua errors with `/console scriptErrors 1`.
 
-The pet's sprite sheets (`Media/Pet/Murloc<stage>.tga`) are generated from code. Edit the
-drawing in `tools/pet/murloc-art.js` and rebuild them with Node (no dependencies); the script
-also writes `tools/pet/preview.png` to review the result:
+The pets' sprite sheets (`Media/Pet/Murloc.tga` and `Media/Pet/Void.tga`) are generated from
+code. Edit the drawing in `tools/pet/murloc-art.js` (the poses, shared by both) or
+`tools/pet/void-art.js` and rebuild them with Node (no dependencies); the script also writes
+`tools/pet/preview.png` to review the result:
 
 ```powershell
-node tools/pet/build-murloc.js
+node tools/pet/build-pets.js
 ```
+
+What the pets say lives in `Locales/PetPhrases_<locale>.lua`.
 
 To share a build, package it into `XPLedger-<version>.zip` (version read from the TOC,
 development files left out):

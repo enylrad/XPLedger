@@ -88,6 +88,12 @@ function Compat.IsUnderwater()
     return not ns.IsSecret(underwater) and (underwater == true or underwater == 1)
 end
 
+--- Returns true while the player is flying on a mount (secret-safe).
+function Compat.IsFlying()
+    local flying = IsFlying and IsFlying()
+    return not ns.IsSecret(flying) and (flying == true or flying == 1)
+end
+
 --- Returns true while the player is flagged away from keyboard (secret-safe).
 function Compat.IsAFK()
     local afk = UnitIsAFK and UnitIsAFK("player")

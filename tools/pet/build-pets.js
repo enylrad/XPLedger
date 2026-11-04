@@ -1,26 +1,49 @@
 'use strict';
 /*
-    Builds the murloc sprite sheets of the XPLedger companion.
+    Builds the sprite sheets of the XPLedger companions.
 
-      node tools/pet/build-murloc.js [--rows=6-11] [--scale=5]
+      node tools/pet/build-pets.js [--rows=6-11] [--scale=5]
 
-    Writes Media/Pet/Murloc<stage>.tga (128x1024, uncompressed 32-bit TGA that
-    the game can load) and tools/pet/preview.png, every sheet enlarged on a
-    checkerboard to review the art.
+    Writes Media/Pet/<Species>.tga (128x1024, uncompressed 32-bit TGA that the
+    game can load) for the murloc and the Void hatchling, and tools/pet/preview.png,
+    every sheet enlarged on a checkerboard to review the art.
 */
 
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const { SIZE, PALETTE, STAGES, ANIMATIONS, ICONS, compose } = require('./murloc-art');
+const murloc = require('./murloc-art');
+const voidling = require('./void-art');
+
+const { SIZE, ANIMATIONS, ICONS } = murloc;
+
+// File name, palette and drawing of every species. The order matters only
+// for the preview. A new species is more than a drawing: it also needs its
+// own phrases, written for its personality, in every locale (see "Adding a
+// new pet" in UI/Pet/Talk.lua). `rage` is the optional bigger form the
+// species turns into when it is clicked too much: frames of rageSize pixels
+// drawn by rage(frame), plus the `collapse` frames that lead into it.
+const SPECIES = [
+    { file: 'Murloc', palette: murloc.PALETTE, compose: murloc.compose },
+    {
+        file: 'Void', palette: voidling.PALETTE, compose: voidling.compose,
+        rage: voidling.composeRage, rageFrames: voidling.RAGE, rageSize: voidling.RAGE_SIZE,
+        collapse: voidling.composeCollapse, collapseFrames: voidling.COLLAPSE,
+    },
+];
 
 const COLUMNS = 4;
 const ROWS = 32;
 const WIDTH = SIZE * COLUMNS;
 const HEIGHT = SIZE * ROWS;
+// The rage form fills rows 22-25 and its collapse row 26 (see the sheet
+// layout in murloc-art.js).
+const RAGE_ROW = 22;
+const RAGE_ROWS = 4;
+const COLLAPSE_ROW = 26;
 // Preview options: --rows=6-11 shows only those rows, --scale=5 the zoom.
 const args = Object.fromEntries(process.argv.slice(2).map((arg) => arg.replace(/^--/, '').split('=')));
-const [firstRow, lastRow] = (args.rows || `0-${ANIMATIONS.length - 1}`).split('-').map(Number);
+const [firstRow, lastRow] = (args.rows || `0-${COLLAPSE_ROW}`).split('-').map(Number);
 const PREVIEW_SCALE = Number(args.scale) || 3;
 
 const root = path.resolve(__dirname, '..', '..');
@@ -29,11 +52,11 @@ const mediaDir = path.join(root, 'Media', 'Pet');
 const ICON_SIZE = 8;
 const ICON_ROW = ROWS - 1;
 
-function putPixel(rgba, x, y, color) {
+function putPixel(rgba, x, y, color, palette) {
     if (color === '.') {
         return;
     }
-    const rgb = PALETTE[color];
+    const rgb = palette[color];
     if (!rgb) {
         throw new Error(`unknown color '${color}'`);
     }
@@ -44,25 +67,51 @@ function putPixel(rgba, x, y, color) {
     rgba[offset + 3] = rgb[3];
 }
 
-/** Renders one stage into an RGBA buffer (top-left origin). */
-function renderSheet(stageId) {
+/** Renders one species into an RGBA buffer (top-left origin). */
+function renderSheet(species) {
     const rgba = Buffer.alloc(WIDTH * HEIGHT * 4);
     ANIMATIONS.forEach((frames, row) => {
         frames.forEach((pose, column) => {
-            const canvas = compose(stageId, pose);
+            const canvas = species.compose(pose);
             for (let y = 0; y < SIZE; y++) {
                 for (let x = 0; x < SIZE; x++) {
-                    putPixel(rgba, column * SIZE + x, row * SIZE + y, canvas.get(x, y));
+                    putPixel(rgba, column * SIZE + x, row * SIZE + y, canvas.get(x, y), species.palette);
                 }
             }
         });
     });
-    // Effect icons, the same on every sheet.
+    // Rage form: big frames, as many per row band as fit.
+    if (species.rage) {
+        const size = species.rageSize;
+        const perBand = WIDTH / size;
+        species.rageFrames.forEach((frame, index) => {
+            const canvas = species.rage(frame);
+            const left = (index % perBand) * size;
+            const top = RAGE_ROW * SIZE + Math.floor(index / perBand) * size;
+            if (top + size > (RAGE_ROW + RAGE_ROWS) * SIZE) {
+                throw new Error('the rage form does not fit in its rows');
+            }
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    putPixel(rgba, left + x, top + y, canvas.get(x, y), species.palette);
+                }
+            }
+        });
+        species.collapseFrames.forEach((frame, column) => {
+            const canvas = species.collapse(frame);
+            for (let y = 0; y < SIZE; y++) {
+                for (let x = 0; x < SIZE; x++) {
+                    putPixel(rgba, column * SIZE + x, COLLAPSE_ROW * SIZE + y, canvas.get(x, y), species.palette);
+                }
+            }
+        });
+    }
+    // Effect icons, the same on every sheet (always in the murloc colors).
     const perRow = SIZE / ICON_SIZE;
     ICONS.forEach((rows, index) => {
         const left = (index % perRow) * ICON_SIZE;
         const top = ICON_ROW * SIZE + Math.floor(index / perRow) * ICON_SIZE;
-        rows.forEach((row, y) => row.split('').forEach((color, x) => putPixel(rgba, left + x, top + y, color)));
+        rows.forEach((row, y) => row.split('').forEach((color, x) => putPixel(rgba, left + x, top + y, color, murloc.PALETTE)));
     });
     return rgba;
 }
@@ -172,9 +221,9 @@ function renderPreview(sheets) {
 }
 
 fs.mkdirSync(mediaDir, { recursive: true });
-const sheets = Object.keys(STAGES).map((stageId) => {
-    const rgba = renderSheet(stageId);
-    const file = path.join(mediaDir, `Murloc${stageId}.tga`);
+const sheets = SPECIES.map((species) => {
+    const rgba = renderSheet(species);
+    const file = path.join(mediaDir, `${species.file}.tga`);
     fs.writeFileSync(file, encodeTGA(rgba, WIDTH, HEIGHT));
     console.log('wrote', path.relative(root, file));
     return rgba;
