@@ -377,7 +377,7 @@ ns.Locales.enUS = {
     HELP_PET = "/xpl pet [reset | demo] - show or hide the pet, move it back to its place or play every animation",
     HELP_LEVELUP = "/xpl levelup [demo] - preview the level up summary for your current level (demo: with sample data in every section)",
 
-    -- Level up summary
+    -- Level up summary (WoW: Forever)
     LEVELUP_TITLE = "Level %d!",
     LEVELUP_STATS = "Stats gained",
     LEVELUP_SPELLS = "New abilities at your trainer",

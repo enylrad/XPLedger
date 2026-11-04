@@ -1,18 +1,19 @@
 --[[----------------------------------------------------------------------------
-    XPLedger - Lo que dicen las mascotas (español, también esMX). Se muestra
-    como texto en el bocadillo; ver UI\Pet\Talk.lua para el formato.
+    XPLedger - What the pets say (Spanish, also used for esMX). Shown as
+    text in the speech bubble; see UI\Pet\Talk.lua for the layout of these
+    tables.
 
-    Cada mascota tiene su personalidad y cada frase está escrita para ella.
-    Una mascota nueva necesita todas estas claves, escritas a su manera
-    (no copiadas de otra mascota), en todos los idiomas: ver "Adding a new
-    pet" en UI\Pet\Talk.lua.
+    Each pet has its own personality and every line is written for it.
+    A new pet needs all of these keys, written in its own voice (not
+    copied from another pet), in every locale: see "Adding a new pet"
+    in UI\Pet\Talk.lua.
 ------------------------------------------------------------------------------]]
 
 local _, ns = ...
 
 ns.PetPhrases = ns.PetPhrases or {}
 ns.PetPhrases.esES = {
-    ----------------------------------------------------------------- Múrloc
+    ----------------------------------------------------------------- Murloc
     murloc = {
         events = {
             hello = "¡Mrglgl! ¡Hola! ¡Mrgl!",
@@ -175,7 +176,7 @@ ns.PetPhrases.esES = {
         },
     },
 
-    ------------------------------------------------------- Cría del Vacío
+    ------------------------------------------------------- Void hatchling
     void = {
         events = {
             hello = "Hola. El Vacío también te saluda. Saluda a todo el mundo.",
@@ -353,10 +354,10 @@ ns.PetPhrases.esES = {
             },
         },
     },
-    ---------------------------------------------- Cría del Vacío, sin filtro
-    -- Nihil sin filtro (settings.pet.harsh): la misma cría pesimista del
-    -- Vacío, pero sin piedad. Se burla de cómo juegas (muertes, lentitud,
-    -- decisiones), nunca de la persona; sin palabrotas.
+    ----------------------------------------------- Void hatchling, unfiltered
+    -- Nihil with no filter (settings.pet.harsh): the same gloomy Void
+    -- hatchling, only merciless. It mocks how the player plays (deaths,
+    -- slowness, choices), never the person; no swearing.
     void_harsh = {
         events = {
             hello = "Ah. Eres tú. El Vacío esperaba a alguien competente.",
