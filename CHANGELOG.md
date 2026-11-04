@@ -4,7 +4,7 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2026-11-04
 
 ### Added
 
@@ -35,7 +35,7 @@ All notable changes to XPLedger are documented here. The format follows
 
 - The pet's effects no longer create garbage on every frame.
 
-## [Unreleased] (Español)
+## [0.3.0] - 2026-11-04 (Español)
 
 ### Añadido
 
