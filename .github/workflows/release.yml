@@ -27,5 +27,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Zip file XPLedger-v0.3.1.zip, shown on CurseForge as "XPLedger v0.3.1".
       - name: Package and upload
         uses: BigWigsMods/packager@v2
+        with:
+          args: -n "{package-name}-{project-version}:{package-name} {project-version}"
