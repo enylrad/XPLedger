@@ -4,14 +4,18 @@
     Every species has its own way of talking, registered by the
     Locales\PetPhrases_<locale>.lua files in ns.PetPhrases[locale][species]:
 
-      events  one line (or a list to pick from) per event: hello, level (%d),
-              achievement, dead, revive, catch, excited, poke, and annoyed:
+      events  a list of lines (or a single one) per event: hello, level (%d
+              in every line), achievement, dead, revive, catch, excited, poke,
+              and annoyed:
               the lines said IN ORDER when the player keeps clicking the pet,
               from mildly bothered to fed up (it starts over at the end).
               A species with a rage form (PetSprite.RAGE_FORMS) turns into
               it instead of starting over, roaring a `transform` line, and
               says a `calm` line once it is back to normal
       cheer   cheering lines grouped by what the player is doing (CONTEXTS)
+
+    Lines of a list come in shuffled rounds: every line is said once before
+    any of them comes back, and never the same one twice in a row.
 
     The murloc is an optimist that speaks mostly in murloc; Nihil, the Void
     hatchling, is sweet and cheerfully gloomy (the Void will swallow it all,
@@ -32,10 +36,11 @@
     Every pet has a personality, and everything it says must be written for
     it: the murloc gurgles in murloc, Nihil is a sweet pessimist. A new pet
     needs, in EVERY locale file (Locales\PetPhrases_<locale>.lua):
-      - every key of `events`, `annoyed` included (about 10 lines, in order
-        of growing annoyance, in its own way of getting annoyed);
-      - every context of CONTEXTS in `cheer`, about 100 lines in total, and
-        the same number in each language;
+      - every key of `events`, about 5 lines each (8 for poke), `annoyed`
+        included (about 10 lines, in order of growing annoyance, in its own
+        way of getting annoyed);
+      - every context of CONTEXTS in `cheer`, at least 12 lines each (24 in
+        general), and the same number in each language;
       - if it has a rage form, `transform` and `calm` (a few lines each):
         what it roars as it turns into a horror and how it comes back to
         itself, both in character.
@@ -62,7 +67,6 @@ local JITTER = 0.2           -- cheers come up to 20% earlier or later
 local RETRY_DELAY = 30       -- seconds to wait when the moment is not right
 local RECENT_WINDOW = 120    -- seconds a kill, quest or dance stays "recent"
 local RESTED_CHANCE = 0.35   -- how often rested experience is the topic
-local MEMORY = 10            -- recent lines that are not repeated
 local CHEER_DURATION = 5     -- seconds the bubble stays up
 local POKE_DURATION = 1.8    -- the same for the short sound on a click
 local POKE_CHEER_CHANCE = 0.75 -- a click says a cheer this often (else a sound)
@@ -77,7 +81,10 @@ PetTalk.CONTEXTS = {
     "swimming", "fishing", "dancing", "flying", "dead", "almost", "rested",
 }
 
-local said = {}  -- recent lines, oldest first
+-- Shuffle bag of every phrase list, by the list itself: the indexes still
+-- to say this round (said from the end) and the last one said. Weak keys,
+-- so the lists of another species, voice or language start fresh bags.
+local bags = setmetatable({}, { __mode = "k" })
 local nextCheerAt
 
 local function Settings()
@@ -129,16 +136,27 @@ function PetTalk:HasHarshVoice(species)
     return false
 end
 
-local function WasSaid(line)
-    for _, previous in ipairs(said) do
-        if previous == line then
-            return true
-        end
+--- Refills an empty bag with every index of a list of `count` lines,
+--- shuffled, so that the first one out is not `last` (no line twice in a
+--- row).
+local function Refill(bag, count, last)
+    local order = bag.order
+    for i = 1, count do
+        order[i] = i
     end
-    return false
+    for i = count, 2, -1 do
+        local j = math.random(1, i)
+        order[i], order[j] = order[j], order[i]
+    end
+    -- Lines are taken from the end.
+    if count > 1 and order[count] == last then
+        local j = math.random(1, count - 1)
+        order[count], order[j] = order[j], order[count]
+    end
 end
 
---- Picks a line from a list, avoiding the last few that were said.
+--- Picks a line from a list: every line once, in random order, before any
+--- of them comes back.
 local function Pick(lines)
     if type(lines) == "string" then
         return lines
@@ -146,21 +164,17 @@ local function Pick(lines)
     if type(lines) ~= "table" or #lines == 0 then
         return nil
     end
-    local candidates = {}
-    for _, line in ipairs(lines) do
-        if not WasSaid(line) then
-            candidates[#candidates + 1] = line
-        end
+    local bag = bags[lines]
+    if not bag then
+        bag = { order = {} }
+        bags[lines] = bag
     end
-    if #candidates == 0 then
-        candidates = lines
+    if #bag.order == 0 then
+        Refill(bag, #lines, bag.last)
     end
-    local line = candidates[math.random(1, #candidates)]
-    said[#said + 1] = line
-    if #said > MEMORY then
-        table.remove(said, 1)
-    end
-    return line
+    local index = table.remove(bag.order)
+    bag.last = index
+    return lines[index]
 end
 
 --- Line of the active species for an event, formatted with the arguments.

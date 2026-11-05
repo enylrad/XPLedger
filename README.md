@@ -46,7 +46,8 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
   - It can cheer you on now and then (off by default, every 20 seconds to 30 minutes) with
     text in its speech bubble that fits what you are doing: fighting, low on health,
     questing, in a dungeon, swimming, fishing, flying, dancing, resting, dead, about to level
-    up... Over 100 lines per pet. Click it and it talks too; keep clicking and it gets
+    up... Over 200 lines per pet, and none comes back until it has said the rest of its
+    kind. Click it and it talks too; keep clicking and it gets
     annoyed in its own way (push Nihil too far and it turns into a Void horror for a few
     seconds). The murloc talks mostly in murloc; Nihil is a sweet pessimist, with an optional
     unfiltered voice that mocks how you play. Their language can differ from the addon's.

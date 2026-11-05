@@ -4,6 +4,30 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-11-05
+
+### Changed
+- The pets have over 300 new lines in each language: every pet now has more than 200. Each
+  event (greeting, level up, achievement, death, resurrection, catching a fish and almost
+  leveling) has five lines instead of one, and every situation has at least twelve.
+
+### Fixed
+- The pets no longer repeat themselves so much: catching a fish always gave the same line,
+  and cheers came back after a few minutes. Now every line of a list is said once, in random
+  order, before any of them comes back, and never twice in a row.
+
+## [0.3.1] - 2026-11-05 (Español)
+
+### Cambiado
+- Las mascotas tienen más de 300 frases nuevas en cada idioma: ahora cada una pasa de 200.
+  Cada evento (saludo, subida de nivel, logro, muerte, resurrección, pescar un pez y estar a
+  punto de subir) tiene cinco frases en vez de una, y cada situación tiene al menos doce.
+
+### Corregido
+- Las mascotas ya no se repiten tanto: al pescar un pez siempre decían la misma frase, y los
+  ánimos volvían a los pocos minutos. Ahora cada frase de una lista sale una vez, en orden
+  aleatorio, antes de que vuelva ninguna, y nunca dos veces seguidas.
+
 ## [0.3.0] - 2026-11-04
 
 ### Added
