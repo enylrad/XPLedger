@@ -10,3 +10,4 @@ ignore:
   - README.md
   - .gitattributes
   - .gitignore
+  - .github

@@ -39,7 +39,7 @@ if (-not $versionLine) {
 $version = ($versionLine -replace '^## Version:\s*', '').Trim()
 
 # Top-level entries that never ship.
-$excluded = @(".git", ".release", "tools", "README.md", ".gitattributes", ".gitignore", ".pkgmeta", ".vscode", ".idea")
+$excluded = @(".git", ".release", "tools", "README.md", ".gitattributes", ".gitignore", ".github", ".pkgmeta", ".vscode", ".idea")
 
 $zipPath = Join-Path $OutDir "$addonName-$version.zip"
 if (Test-Path $zipPath) {

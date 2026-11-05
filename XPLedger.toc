@@ -5,6 +5,7 @@
 ## Notes-esMX: Controla tu ritmo de experiencia, estima el tiempo que falta para subir de nivel y guarda el historial de subida de todos tus personajes.
 ## Author: enylrad
 ## Version: 0.3.1
+## X-Curse-Project-ID: 1723925
 ## Category: Quests
 ## Category-enUS: Quests
 ## Category-esES: Misiones

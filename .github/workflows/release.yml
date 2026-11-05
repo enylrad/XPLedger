@@ -1,0 +1,31 @@
+# Packages the addon and uploads it to CurseForge and GitHub Releases on every
+# version tag (v0.3.1, v0.4.0...). Uses .pkgmeta for what ships and
+# CHANGELOG.md as the changelog, and the CurseForge project from the
+# X-Curse-Project-ID line of XPLedger.toc.
+#
+# Needs the repository secret CF_API_KEY: a CurseForge API token
+# (CurseForge > account settings > API Tokens).
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package and upload
+        uses: BigWigsMods/packager@v2
