@@ -92,8 +92,7 @@ local DEFAULT_SETTINGS = {
     },
     ranking = {           -- friends ranking over Battle.net, see Ranking
         enabled = false,  -- share this account's deaths with Battle.net friends
-        notifyDeaths = true, -- tell when a friend of the group dies
-        -- code = "K7QH4X" once a group was created or joined
+        notifyDeaths = true, -- tell when a friend who shares dies
     },
     panel = {
         tab = "overview",

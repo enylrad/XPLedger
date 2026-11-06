@@ -4,6 +4,20 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-11-06
+
+### Changed
+- Friends ranking (experimental): there is no group code anymore. All your Battle.net
+  friends who use XPLedger with sharing on see each other while you are online at the same
+  time. It does not exchange data with 0.4.0, so update together.
+
+## [0.4.1] - 2026-11-06 (Español)
+
+### Cambiado
+- Ranking con amigos (experimental): ya no hay código de grupo. Tú y todos tus amigos de
+  Battle.net que usen XPLedger con la opción de compartir activada os veis cuando estáis
+  conectados a la vez. No intercambia datos con la 0.4.0, así que actualizad todos.
+
 ## [0.4.0] - 2026-11-06
 
 ### Added

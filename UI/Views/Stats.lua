@@ -6,8 +6,8 @@
       when      experience per weekday and per hour, days played, streaks
       where     experience per zone
       prey      most killed creatures and best rewarded quests
-      friends   deaths ranking of the account and the friends of the group
-                (see Ranking); it has no scope
+      friends   deaths ranking of the account and the Battle.net friends who
+                share (see Ranking); it has no scope
 ------------------------------------------------------------------------------]]
 
 local _, ns = ...
@@ -646,14 +646,7 @@ function Stats:RefreshFriends()
         return { rank .. ".", name, entry.level or "?", ns.FormatInteger(entry.deaths), SeenText(entry) }
     end, "STATS_NO_DATA")
 
-    local code = ranking:GetCode()
-    if not ns.settings.ranking.enabled then
-        self.friendsNote:SetText(L["RANK_DISABLED"])
-    elseif not code then
-        self.friendsNote:SetText(L["RANK_NO_CODE"])
-    else
-        self.friendsNote:SetText(L["RANK_FOOTER"]:format(code))
-    end
+    self.friendsNote:SetText(L[ranking:IsActive() and "RANK_FOOTER" or "RANK_DISABLED"])
 end
 
 ns:RegisterMessage("XPL_RANKING_CHANGED", function()

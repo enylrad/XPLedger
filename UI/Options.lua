@@ -317,8 +317,8 @@ function Options:BuildPanel(panel)
     self:BuildRanking(panel, COLUMN_X[1], -590)
 end
 
---- Optional deaths ranking with Battle.net friends (see Ranking): sharing,
---- death notices and the group code.
+--- Optional deaths ranking with Battle.net friends (see Ranking): sharing
+--- and death notices.
 function Options:BuildRanking(panel, x, y)
     local widgets = self.widgets
     local Ranking = ns.Ranking
@@ -350,51 +350,7 @@ function Options:BuildRanking(panel, x, y)
     widgets.rankNotify:SetPoint("TOPLEFT", x + 20, y - 54)
     dependents[#dependents + 1] = widgets.rankNotify
 
-    local codeCaption = Caption(panel, "OPT_RANK_CODE", x, y - 88)
-    dependents[#dependents + 1] = codeCaption
-
-    -- The code can be selected and copied (Ctrl+C), or a friend's typed in
-    -- and confirmed with Enter.
-    local box = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
-    box:SetSize(96, 20)
-    box:SetPoint("TOPLEFT", x + 6, y - 106)
-    box:SetAutoFocus(false)
-    box:SetMaxLetters(8)
-    function box:Refresh()
-        self:SetText(Ranking:GetCode() or "")
-        self:SetCursorPosition(0)
-    end
-    box:SetScript("OnEditFocusGained", function(selfBox) selfBox:HighlightText() end)
-    box:SetScript("OnEscapePressed", function(selfBox)
-        selfBox:Refresh()
-        selfBox:ClearFocus()
-    end)
-    box:SetScript("OnEnterPressed", function(selfBox)
-        local code = Ranking.NormalizeCode(selfBox:GetText())
-        if code then
-            Ranking:SetCode(code)
-        end
-        selfBox:Refresh()
-        selfBox:ClearFocus()
-    end)
-    widgets.rankCode = box
-    dependents[#dependents + 1] = box
-
-    local generate = Theme:CreateButton(panel, "OPT_RANK_GENERATE", 84, 22, function()
-        Ranking:SetCode(Ranking.GenerateCode())
-        box:Refresh()
-    end)
-    generate:SetPoint("LEFT", box, "RIGHT", 8, 0)
-    dependents[#dependents + 1] = generate
-
-    local leave = Theme:CreateButton(panel, "OPT_RANK_LEAVE", 96, 22, function()
-        Ranking:SetCode(nil)
-        box:Refresh()
-    end)
-    leave:SetPoint("LEFT", generate, "RIGHT", 4, 0)
-    dependents[#dependents + 1] = leave
-
-    local help = Caption(panel, "OPT_RANK_DESC", x, y - 140, "small")
+    local help = Caption(panel, "OPT_RANK_DESC", x, y - 86, "small")
     help:SetWidth(280)
     help:SetWordWrap(true)
 

@@ -17,7 +17,7 @@
               count: [5], [10], [20]... [100], plain text) on those deaths,
               `deathhundreds` (%d) on 200, 300...; and `frienddeath` (%s,
               %d: the friend's name and deaths, in that order) when a
-              friend of the ranking group dies
+              Battle.net friend who shares dies (see Ranking)
       cheer   cheering lines grouped by what the player is doing (CONTEXTS)
 
     Lines of a list come in shuffled rounds: every line is said once before

@@ -1,31 +1,32 @@
 --[[----------------------------------------------------------------------------
     XPLedger - Friends ranking
-    Optional (settings.ranking.enabled, off by default): Battle.net friends
-    who run XPLedger and share the same group code see each other's deaths
-    in a ranking (Stats view, Friends page), and can be told when one of them
-    dies (settings.ranking.notifyDeaths).
+    Optional and experimental (settings.ranking.enabled, off by default):
+    Battle.net friends who run XPLedger with sharing on see each other's
+    deaths in a ranking (Stats view, Friends page), and can be told when one
+    of them dies (settings.ranking.notifyDeaths).
 
     Everything travels as hidden Battle.net addon data (Compat.
     SendBattleNetData): nothing is written in the chat, and only Battle.net
     friends online in WoW receive it. Messages are one line:
 
-      1;<kind>;<code>;<Name-Realm>;<CLASS>;<level>;<deaths>;<server time>
+      2;<kind>;<Name-Realm>;<CLASS>;<level>;<deaths>;<server time>
 
-      H  hello: sent on login, when sharing is turned on and when joining a
-         group; the friends of the group answer with U
+      H  hello: sent on login and when sharing is turned on; the friends
+         who share answer with U
       U  update: on a level up, and as the answer to H (to that friend only)
-      D  death: like U, and the friends of the group may be told
+      D  death: like U, and the friends may be told
 
-    A message from another code, malformed or with numbers out of range is
-    dropped silently. Received names never carry UI escape sequences.
+    Protocol 1 (0.4.0) also carried a group code; those messages are
+    ignored. A malformed message or one with numbers out of range is dropped
+    silently. Received names never carry UI escape sequences.
 
     Stored for the whole account:
       XPLedgerDB.ranking = {
           members = { ["Name-Realm"] = { class, level, deaths, seen, at } },
       }
     `seen` is the local time of the last message, `at` the sender's server
-    time. Members are forgotten when the group code changes. The account's
-    own characters come from the local records, never from messages.
+    time. The account's own characters come from the local records, never
+    from messages.
 ------------------------------------------------------------------------------]]
 
 local _, ns = ...
@@ -33,9 +34,8 @@ local _, ns = ...
 local Ranking = ns:NewModule("Ranking")
 
 local PREFIX = "XPLedger"
-local PROTOCOL = "1"
-local CODE_LENGTH = 6
-local CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" -- no O/0 or I/1
+local PROTOCOL = "2"
+local FIELDS = 7
 local SEND_INTERVAL = 0.3     -- seconds between two messages
 local BLOCKED_RETRY = 5       -- seconds to wait while the game blocks them
 local LOGIN_DELAY = 8         -- seconds after login before saying hello
@@ -57,58 +57,17 @@ local function Members()
 end
 
 --------------------------------------------------------------------------------
--- Group code
+-- Sharing
 --------------------------------------------------------------------------------
 
---- Upper-cases a typed code and drops spaces and dashes. Returns the code,
---- or nil when it is not CODE_LENGTH letters and digits.
-function Ranking.NormalizeCode(text)
-    if type(text) ~= "string" then
-        return nil
-    end
-    local code = text:upper():gsub("[%s%-]", "")
-    if #code ~= CODE_LENGTH or code:find("[^A-Z0-9]") then
-        return nil
-    end
-    return code
-end
-
-function Ranking.GenerateCode()
-    local chars = {}
-    for i = 1, CODE_LENGTH do
-        local index = math.random(1, #CODE_CHARS)
-        chars[i] = CODE_CHARS:sub(index, index)
-    end
-    return table.concat(chars)
-end
-
-function Ranking:GetCode()
-    return Ranking.NormalizeCode(Settings().code)
-end
-
---- True when sharing is on and there is a group to share with.
+--- True when the player shares with Battle.net friends.
 function Ranking:IsActive()
-    return Settings().enabled == true and self:GetCode() ~= nil
+    return Settings().enabled == true
 end
 
---- Joins a group (a new code or a friend's). nil leaves the group.
-function Ranking:SetCode(code)
-    code = Ranking.NormalizeCode(code)
-    if code == self:GetCode() then
-        return
-    end
-    Settings().code = code
-    wipe(Members())
-    ns:SendMessage("XPL_RANKING_CHANGED")
-    self:Announce("H")
-end
-
---- Turns sharing on or off. Turning it on without a group creates one.
+--- Turns sharing on or off.
 function Ranking:SetEnabled(enabled)
     Settings().enabled = enabled and true or false
-    if enabled and not self:GetCode() then
-        Settings().code = Ranking.GenerateCode()
-    end
     if not enabled then
         wipe(queue)
     end
@@ -123,7 +82,7 @@ end
 local function Encode(kind)
     local level = ns.SafeNumber(UnitLevel("player")) or (ns.char and ns.char.level) or 0
     return table.concat({
-        PROTOCOL, kind, Ranking:GetCode(), ns.charKey, ns.char.class or "UNKNOWN",
+        PROTOCOL, kind, ns.charKey, ns.char.class or "UNKNOWN",
         tostring(level), tostring(ns.Deaths:GetCount()), tostring(GetServerTime()),
     }, ";")
 end
@@ -140,19 +99,19 @@ local function ToInteger(text, low, high)
 end
 
 --- Parses a received line. Returns a message table, or nil when the line is
---- not a valid message of `code`.
-function Ranking.Decode(text, code)
-    if type(text) ~= "string" or #text > 255 or not code then
+--- not a valid message.
+function Ranking.Decode(text)
+    if type(text) ~= "string" or #text > 255 then
         return nil
     end
     local fields = {}
     for field in (text .. ";"):gmatch("([^;]*);") do
         fields[#fields + 1] = field
     end
-    if #fields ~= 8 or fields[1] ~= PROTOCOL or fields[3] ~= code then
+    if #fields ~= FIELDS or fields[1] ~= PROTOCOL then
         return nil
     end
-    local kind, name, class = fields[2], fields[4], fields[5]
+    local kind, name, class = fields[2], fields[3], fields[4]
     if kind ~= "H" and kind ~= "U" and kind ~= "D" then
         return nil
     end
@@ -163,9 +122,9 @@ function Ranking.Decode(text, code)
     if #class > 20 or not class:match("^[A-Z]+$") then
         return nil
     end
-    local level = ToInteger(fields[6], 1, MAX_LEVEL)
-    local deaths = ToInteger(fields[7], 0, MAX_DEATHS)
-    local at = ToInteger(fields[8], 0, 4294967295)
+    local level = ToInteger(fields[5], 1, MAX_LEVEL)
+    local deaths = ToInteger(fields[6], 0, MAX_DEATHS)
+    local at = ToInteger(fields[7], 0, 4294967295)
     if not level or not deaths or not at then
         return nil
     end
@@ -259,7 +218,7 @@ function Ranking:OnData(text, sender)
     if not self:IsActive() then
         return
     end
-    local message = Ranking.Decode(text, self:GetCode())
+    local message = Ranking.Decode(text)
     if not message or ns.db.characters[message.name] then
         return
     end
@@ -289,7 +248,7 @@ end
 --------------------------------------------------------------------------------
 
 --- Every row of the ranking, most deaths first: the account's characters
---- (`mine` = true) and the members of the group.
+--- (`mine` = true) and the friends who share.
 function Ranking:GetEntries()
     local entries = {}
     for key, record in pairs(ns.db.characters) do
@@ -338,6 +297,8 @@ function Ranking:OnInitialize()
         ns.db.ranking = data
     end
     data.members = type(data.members) == "table" and data.members or {}
+    -- 0.4.0 had group codes.
+    ns.settings.ranking.code = nil
 end
 
 function Ranking:OnLogin()
