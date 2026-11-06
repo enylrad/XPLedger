@@ -11,7 +11,13 @@
               from mildly bothered to fed up (it starts over at the end).
               A species with a rage form (PetSprite.RAGE_FORMS) turns into
               it instead of starting over, roaring a `transform` line, and
-              says a `calm` line once it is back to normal
+              says a `calm` line once it is back to normal.
+              Deaths (settings.pet.deathCount): `deathcount` (%d, the
+              player's deaths) on each death, `deathmilestone` (a table by
+              count: [5], [10], [20]... [100], plain text) on those deaths,
+              `deathhundreds` (%d) on 200, 300...; and `frienddeath` (%s,
+              %d: the friend's name and deaths, in that order) when a
+              friend of the ranking group dies
       cheer   cheering lines grouped by what the player is doing (CONTEXTS)
 
     Lines of a list come in shuffled rounds: every line is said once before
@@ -36,9 +42,10 @@
     Every pet has a personality, and everything it says must be written for
     it: the murloc gurgles in murloc, Nihil is a sweet pessimist. A new pet
     needs, in EVERY locale file (Locales\PetPhrases_<locale>.lua):
-      - every key of `events`, about 5 lines each (8 for poke), `annoyed`
-        included (about 10 lines, in order of growing annoyance, in its own
-        way of getting annoyed);
+      - every key of `events`, about 5 lines each (8 for poke and
+        deathcount, 6 for frienddeath, 3 for deathhundreds, one per count
+        in deathmilestone), `annoyed` included (about 10 lines, in order of
+        growing annoyance, in its own way of getting annoyed);
       - every context of CONTEXTS in `cheer`, at least 12 lines each (24 in
         general), and the same number in each language;
       - if it has a rage form, `transform` and `calm` (a few lines each):
@@ -186,6 +193,28 @@ function PetTalk:Event(key, ...)
         line = line:format(...)
     end
     return line
+end
+
+--- Line of the active species for the player's death number `count`: the
+--- milestone line on 5, 10, 20... 100, a hundreds line on 200, 300... and a
+--- count line otherwise.
+function PetTalk:DeathLine(count)
+    local own, fallback = GetPhrases(ns.Pet:GetSpecies())
+    local function Milestone(phrases)
+        local milestones = phrases.events and phrases.events.deathmilestone
+        return type(milestones) == "table" and milestones[count] or nil
+    end
+    local line = Milestone(own) or Milestone(fallback)
+    if line then
+        return line
+    end
+    if count > 100 and count % 100 == 0 then
+        line = self:Event("deathhundreds", count)
+        if line then
+            return line
+        end
+    end
+    return self:Event("deathcount", count) or self:Event("dead")
 end
 
 local function IsRecent(pet, action, now)

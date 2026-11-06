@@ -4,6 +4,38 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-11-06
+
+### Added
+- Death counter: every death of each character is counted, also at the level cap.
+- The pet tells you how many times you have died, on each death (optional, in the pet
+  options), with special lines on the 5th, 10th, 20th, 30th... and 100th death, and on every
+  hundred after that.
+- Friends ranking (**experimental for now**; optional, off by default): Battle.net friends who use XPLedger and share
+  a group code see each other's deaths in the new *Friends* page of *Stats*. Create a code in
+  the options and give it to your friends, or type theirs. The data travels hidden over
+  Battle.net: nothing is written in the chat, and only your characters, levels and deaths
+  are shared.
+- Death notices (experimental, part of the friends ranking; optional): when a friend of your group dies, the pet tells you ("Luis just
+  died... that's 23"), or a message shows in the middle of the screen if the pet is hidden.
+
+## [0.4.0] - 2026-11-06 (Español)
+
+### Añadido
+- Contador de muertes: se cuentan todas las muertes de cada personaje, también a nivel
+  máximo.
+- La mascota te dice cuántas veces has muerto en cada muerte (opcional, en las opciones de
+  la mascota), con frases especiales en la muerte 5, 10, 20, 30... y 100, y en cada centena
+  a partir de ahí.
+- Ranking con amigos (**experimental por ahora**; opcional, desactivado por defecto): los amigos de Battle.net que usan
+  XPLedger y comparten un código de grupo ven las muertes de los demás en la nueva página
+  *Amigos* de *Estadísticas*. Crea un código en las opciones y pásaselo a tus amigos, o
+  escribe el suyo. Los datos viajan ocultos por Battle.net: no se escribe nada en el chat, y
+  solo se comparten tus personajes, niveles y muertes.
+- Avisos de muerte (experimental, parte del ranking con amigos; opcional): cuando muere un amigo de tu grupo, te lo dice la mascota
+  («Luis acaba de morir... y van 23»), o sale un mensaje en el centro de la pantalla si la
+  mascota está oculta.
+
 ## [0.3.1] - 2026-11-05
 
 ### Changed

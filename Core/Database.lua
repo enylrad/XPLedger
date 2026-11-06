@@ -9,6 +9,7 @@
           settings   = { ... see DEFAULT_SETTINGS ... },
           records    = { ... see Records ... },
           trainerCache = { ... see Spells ... },
+          ranking    = { ... see Ranking ... },
           characters = {
               ["Name-Realm"] = {
                   guid, name, surname, realm, class, race, faction, flavor, level,
@@ -23,6 +24,7 @@
                   goal                          -- level goal, see Goals
                   sessions                      -- finished session summaries, see Sessions
                   stats                         -- when/where/what statistics, see Stats
+                  deathCount                    -- every death, see Deaths
                   restedXP, restedAt, ...       -- offline rested estimate, see Rested
               },
           },
@@ -86,6 +88,12 @@ local DEFAULT_SETTINGS = {
         cheerSeconds = 300, -- time between cheers (20 s to 30 min, see PetTalk.INTERVALS)
         locale = "auto",  -- language of what the pet says: "auto" (the addon's) or a locale
         harsh = false,    -- "unfiltered" voice of the species that have one (Nihil): harsher lines
+        deathCount = true, -- says how many times the character has died, on each death
+    },
+    ranking = {           -- friends ranking over Battle.net, see Ranking
+        enabled = false,  -- share this account's deaths with Battle.net friends
+        notifyDeaths = true, -- tell when a friend of the group dies
+        -- code = "K7QH4X" once a group was created or joined
     },
     panel = {
         tab = "overview",
@@ -266,6 +274,7 @@ function Database:ResetCharacter(key)
     record.sessions = nil
     record.activeRun = nil
     record.stats = nil
+    record.deathCount = nil
     ns.ApplyDefaults(record, CHARACTER_DEFAULTS)
     ns:SendMessage("XPL_DATA_RESET", key)
 end

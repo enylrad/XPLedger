@@ -312,6 +312,61 @@ function Compat.InPetBattle()
 end
 
 --------------------------------------------------------------------------------
+-- Battle.net addon data (friends ranking)
+--------------------------------------------------------------------------------
+
+--- Registers an addon message prefix (needed to receive BN_CHAT_MSG_ADDON).
+function Compat.RegisterAddonPrefix(prefix)
+    local register = (C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix) or _G.RegisterAddonMessagePrefix
+    if register then
+        pcall(register, prefix)
+    end
+end
+
+--- True while the game blocks addon messages (instances and encounters since
+--- Midnight). Clients without the check never block.
+function Compat.IsAddonMessagingBlocked()
+    local check = C_ChatInfo and C_ChatInfo.InChatMessagingLockdown
+    if not check then
+        return false
+    end
+    local ok, blocked = pcall(check)
+    return ok and IsTrue(blocked)
+end
+
+--- Calls `callback(gameAccountID)` for every game account of a Battle.net
+--- friend that is online in World of Warcraft.
+function Compat.ForEachOnlineWoWFriend(callback)
+    local battleNet = C_BattleNet
+    if not (BNGetNumFriends and battleNet and battleNet.GetFriendNumGameAccounts
+        and battleNet.GetFriendGameAccountInfo) then
+        return
+    end
+    local wow = _G.BNET_CLIENT_WOW or "WoW"
+    local friends = ns.SafeNumber(BNGetNumFriends()) or 0
+    for friend = 1, friends do
+        local accounts = ns.SafeNumber(battleNet.GetFriendNumGameAccounts(friend)) or 0
+        for account = 1, accounts do
+            local info = battleNet.GetFriendGameAccountInfo(friend, account)
+            local id = info and ns.SafeNumber(info.gameAccountID)
+            if id and IsTrue(info.isOnline) and ns.SafeString(info.clientProgram) == wow then
+                callback(id)
+            end
+        end
+    end
+end
+
+--- Sends hidden addon data to a Battle.net game account. Nothing shows in
+--- the chat. Returns true when the client took it.
+function Compat.SendBattleNetData(gameAccountID, prefix, text)
+    local send = (C_BattleNet and C_BattleNet.SendGameData) or _G.BNSendGameData
+    if not send then
+        return false
+    end
+    return (pcall(send, gameAccountID, prefix, text))
+end
+
+--------------------------------------------------------------------------------
 -- Identity
 --------------------------------------------------------------------------------
 

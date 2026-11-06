@@ -312,6 +312,94 @@ function Options:BuildPanel(panel)
     end)
     -- Stacked: side by side they overflow into the right column.
     resetAll:SetPoint("TOPLEFT", resetCharacter, "BOTTOMLEFT", 0, -6)
+
+    ---------------------------------------------------------- Friends ranking
+    self:BuildRanking(panel, COLUMN_X[1], -590)
+end
+
+--- Optional deaths ranking with Battle.net friends (see Ranking): sharing,
+--- death notices and the group code.
+function Options:BuildRanking(panel, x, y)
+    local widgets = self.widgets
+    local Ranking = ns.Ranking
+    SectionTitle(panel, "OPT_SECTION_RANKING", x, y)
+
+    local dependents = {}
+    local function UpdateEnabled()
+        local enabled = ns.settings.ranking.enabled and true or false
+        for _, widget in ipairs(dependents) do
+            if widget.SetEnabled then
+                widget:SetEnabled(enabled)
+            end
+            widget:SetAlpha(enabled and 1 or 0.4)
+        end
+    end
+
+    widgets.rankShare = Theme:CreateCheckbox(panel, "OPT_RANK_SHARE",
+        function() return ns.settings.ranking.enabled end,
+        function(value)
+            Ranking:SetEnabled(value)
+            UpdateEnabled()
+            Options:Refresh()
+        end)
+    widgets.rankShare:SetPoint("TOPLEFT", x, y - 28)
+
+    widgets.rankNotify = Theme:CreateCheckbox(panel, "OPT_RANK_NOTIFY",
+        function() return ns.settings.ranking.notifyDeaths end,
+        function(value) ns.settings.ranking.notifyDeaths = value end)
+    widgets.rankNotify:SetPoint("TOPLEFT", x + 20, y - 54)
+    dependents[#dependents + 1] = widgets.rankNotify
+
+    local codeCaption = Caption(panel, "OPT_RANK_CODE", x, y - 88)
+    dependents[#dependents + 1] = codeCaption
+
+    -- The code can be selected and copied (Ctrl+C), or a friend's typed in
+    -- and confirmed with Enter.
+    local box = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
+    box:SetSize(96, 20)
+    box:SetPoint("TOPLEFT", x + 6, y - 106)
+    box:SetAutoFocus(false)
+    box:SetMaxLetters(8)
+    function box:Refresh()
+        self:SetText(Ranking:GetCode() or "")
+        self:SetCursorPosition(0)
+    end
+    box:SetScript("OnEditFocusGained", function(selfBox) selfBox:HighlightText() end)
+    box:SetScript("OnEscapePressed", function(selfBox)
+        selfBox:Refresh()
+        selfBox:ClearFocus()
+    end)
+    box:SetScript("OnEnterPressed", function(selfBox)
+        local code = Ranking.NormalizeCode(selfBox:GetText())
+        if code then
+            Ranking:SetCode(code)
+        end
+        selfBox:Refresh()
+        selfBox:ClearFocus()
+    end)
+    widgets.rankCode = box
+    dependents[#dependents + 1] = box
+
+    local generate = Theme:CreateButton(panel, "OPT_RANK_GENERATE", 84, 22, function()
+        Ranking:SetCode(Ranking.GenerateCode())
+        box:Refresh()
+    end)
+    generate:SetPoint("LEFT", box, "RIGHT", 8, 0)
+    dependents[#dependents + 1] = generate
+
+    local leave = Theme:CreateButton(panel, "OPT_RANK_LEAVE", 96, 22, function()
+        Ranking:SetCode(nil)
+        box:Refresh()
+    end)
+    leave:SetPoint("LEFT", generate, "RIGHT", 4, 0)
+    dependents[#dependents + 1] = leave
+
+    local help = Caption(panel, "OPT_RANK_DESC", x, y - 140, "small")
+    help:SetWidth(280)
+    help:SetWordWrap(true)
+
+    self.updateRanking = UpdateEnabled
+    UpdateEnabled()
 end
 
 --------------------------------------------------------------------------------
@@ -392,7 +480,7 @@ function Options:BuildPetPanel(panel)
     -- Below the help text, whatever its height in each language.
     local talk = CreateFrame("Frame", nil, panel)
     talk:SetPoint("TOPLEFT", help, "BOTTOMLEFT", 0, -24)
-    talk:SetSize(300, 326)
+    talk:SetSize(300, 352)
     SectionTitle(talk, "OPT_SECTION_PET_TALK", 0, 0)
 
     Caption(talk, "OPT_PET_LANGUAGE", 0, -30)
@@ -429,6 +517,9 @@ function Options:BuildPetPanel(panel)
     self.updatePetHarsh = UpdateHarsh
     UpdateHarsh()
 
+    widgets.deathCount = Theme:CreateCheckbox(talk, "OPT_PET_DEATH_COUNT", PetGetter("deathCount"), PetSetter("deathCount"))
+    widgets.deathCount:SetPoint("TOPLEFT", 0, -158)
+
     local function UpdateCheer()
         widgets.cheerInterval:SetAlpha(ns.settings.pet.cheer and 1 or 0.4)
     end
@@ -436,7 +527,7 @@ function Options:BuildPetPanel(panel)
         ns.settings.pet.cheer = value
         UpdateCheer()
     end)
-    widgets.cheer:SetPoint("TOPLEFT", 0, -158)
+    widgets.cheer:SetPoint("TOPLEFT", 0, -184)
 
     -- The slider moves over the steps of PetTalk.INTERVALS (20 s to 30 min).
     local intervals = ns.PetTalk.INTERVALS
@@ -463,7 +554,7 @@ function Options:BuildPetPanel(panel)
             ns.settings.pet.cheerSeconds = intervals[math.floor(step + 0.5)] or intervals[#intervals]
             ns.PetTalk:Reschedule()
         end)
-    widgets.cheerInterval:SetPoint("TOPLEFT", 20, -192)
+    widgets.cheerInterval:SetPoint("TOPLEFT", 20, -218)
     widgets.cheerInterval:SetWidth(260)
     UpdateCheer()
 
@@ -472,9 +563,9 @@ function Options:BuildPetPanel(panel)
             ns:Print(L["OPT_PET_CHEER_HIDDEN"])
         end
     end)
-    testCheer:SetPoint("TOPLEFT", 0, -238)
+    testCheer:SetPoint("TOPLEFT", 0, -264)
 
-    local talkHelp = Caption(talk, "OPT_PET_CHEER_DESC", 0, -270, "small")
+    local talkHelp = Caption(talk, "OPT_PET_CHEER_DESC", 0, -296, "small")
     talkHelp:SetWidth(280)
     talkHelp:SetWordWrap(true)
 

@@ -35,6 +35,11 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
     most repeated instance...), *When* (XP per weekday and per hour, best day, streaks),
     *Where* (XP, kills, quests and XP/hour per zone) and *Prey* (most killed creatures and
     best rewarded quests). Account-wide bests name the character that holds them.
+    *Friends* ranks your characters, and your friends' if you share, by deaths.
+- **Friends ranking** (experimental for now; optional, off by default): Battle.net friends who use XPLedger and
+  share a group code see each other's deaths in *Stats > Friends*, and can be told when one
+  of them dies ("Luis just died"). The data travels hidden over Battle.net: nothing is
+  written in the chat. Only your characters, levels and deaths are shared.
 - **Goals and alerts**: a level goal with an optional deadline (projected from your recent
   pace) and an experience goal per session. Alerts when a goal is reached, a record is
   beaten or the rested pool runs out, plus a milestone every 10 levels.
@@ -51,6 +56,9 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
     annoyed in its own way (push Nihil too far and it turns into a Void horror for a few
     seconds). The murloc talks mostly in murloc; Nihil is a sweet pessimist, with an optional
     unfiltered voice that mocks how you play. Their language can differ from the addon's.
+  - It keeps count of your deaths and tells you on each one (optional), with special lines
+    on the 5th, 10th, 20th... and 100th death. With the friends ranking on, it also tells you
+    when a friend of your group dies.
   - It reacts to what you do: cheers on a level up, parties on an achievement, fights in
     combat (and panics at low health where the game shows it), celebrates a win or wipes its
     brow when you run away, is knocked out when you die and floats as a ghost until you are
@@ -65,7 +73,7 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
   - Drag it anywhere (or move it from Edit Mode on Retail). It has its own page in the
     options with an animated preview.
 - **Options** in the game's AddOns settings: language, interface style, rate window, idle
-  threshold, shortcut behavior, alerts, data reset.
+  threshold, shortcut behavior, alerts, data reset, friends ranking.
 - **Two interface styles**
   - *Blizzard* (default): built from the game's own templates, fonts and art, so the addon
     looks native in every client: Retail frames on Retail, Forever's art on Forever, the

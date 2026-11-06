@@ -500,6 +500,20 @@ function Pet:Say(text, duration)
     speech:Show()
 end
 
+--- Tells that a friend of the ranking group died (see Ranking). Returns
+--- false when the pet is not on screen, so the caller can tell it another way.
+function Pet:SayFriendDeath(name, deaths)
+    if not (self.frame and self.frame:IsShown()) then
+        return false
+    end
+    local line = ns.PetTalk:Event("frienddeath", name, deaths)
+    if not line then
+        return false
+    end
+    self:Say(line, 4)
+    return true
+end
+
 --- Left-click. The first clicks get a cheer or the pet's usual sound; keep
 --- clicking without a pause and it gets more and more annoyed, line after
 --- line (events.annoyed), until it is left alone for ANNOY_RESET seconds.
@@ -619,7 +633,8 @@ function Pet:UpdateLife(silent)
     self.dead, self.ghost = dead, ghost
     if (dead or ghost) and not wasDown then
         self.reaction, self.pendingOutcome, self.inCombat = nil, nil, false
-        if not silent then
+        -- With the death count on, the count line comes from XPL_DEATH.
+        if not silent and not Settings().deathCount then
             self:Say(ns.PetTalk:Event("dead"), 2.5)
         end
     elseif wasDown and not dead and not ghost and not silent then
@@ -1061,6 +1076,11 @@ function Pet:RegisterEvents()
         hooksecurefunc("DoEmote", function(token) self:OnEmote(token) end)
     end
 
+    ns:RegisterMessage("XPL_DEATH", function(_, count)
+        if Settings().deathCount then
+            self:Say(ns.PetTalk:DeathLine(count), 3)
+        end
+    end)
     ns:RegisterMessage("XPL_LEVEL_UP", function(_, _, newLevel) self:OnLevelUp(newLevel) end)
     -- Boosts and level squishes: follow the new level without celebrating.
     ns:RegisterMessage("XPL_LEVEL_CHANGED", function(_, _, newLevel) self:SetLevel(newLevel) end)

@@ -1,11 +1,13 @@
 --[[----------------------------------------------------------------------------
     XPLedger - Stats view
     Dozens of leveling statistics of the selected character or of the whole
-    account (scope selector on the left), split in four pages:
+    account (scope selector on the left), split in pages:
       summary   tiles built from the history (levels, sessions, runs...)
       when      experience per weekday and per hour, days played, streaks
       where     experience per zone
       prey      most killed creatures and best rewarded quests
+      friends   deaths ranking of the account and the friends of the group
+                (see Ranking); it has no scope
 ------------------------------------------------------------------------------]]
 
 local _, ns = ...
@@ -34,6 +36,7 @@ local PAGES = {
     { value = "when", label = "STATS_PAGE_WHEN" },
     { value = "where", label = "STATS_PAGE_WHERE" },
     { value = "prey", label = "STATS_PAGE_PREY" },
+    { value = "friends", label = "STATS_PAGE_FRIENDS" },
 }
 
 local TILE_WIDTH = (CONTENT_WIDTH - TILE_GAP * (TILE_COLUMNS - 1)) / TILE_COLUMNS
@@ -303,6 +306,7 @@ function Stats:Build(content)
     self:BuildWhen(self.pages.when)
     self:BuildWhere(self.pages.where)
     self:BuildPrey(self.pages.prey)
+    self:BuildFriends(self.pages.friends)
 end
 
 function Stats:BuildSummary(page)
@@ -432,6 +436,33 @@ function Stats:BuildPrey(page)
     self.preyNote:SetShown(ns.Compat.flavor == "retail")
 end
 
+function Stats:BuildFriends(page)
+    self.friendsTable = CreateTable(page, {
+        { key = "RANK_COL_RANK", width = 28, justify = "RIGHT" },
+        { key = "RANK_COL_NAME", width = 250, justify = "LEFT" },
+        { key = "STATS_COL_LEVEL", width = 50, justify = "RIGHT" },
+        { key = "RANK_COL_DEATHS", width = 90, justify = "RIGHT" },
+        { key = "RANK_COL_SEEN", width = 162, justify = "RIGHT" },
+    }, 0, 0, CONTENT_WIDTH, 12)
+    self.friendsTable.tooltip = function(tooltip, entry)
+        tooltip:AddLine(ns.ColorizeByClass(entry.key, entry.class))
+        AddRow(tooltip, L["STATS_LEVEL"], entry.level or "?")
+        AddRow(tooltip, L["RANK_COL_DEATHS"], ns.FormatInteger(entry.deaths))
+        local muted = Theme.colors.muted
+        tooltip:AddLine(L[entry.mine and "RANK_TOOLTIP_MINE" or "RANK_TOOLTIP_FRIEND"], muted[1], muted[2], muted[3])
+    end
+
+    self.friendsNote = Theme:CreateText(page, "muted")
+    self.friendsNote:SetPoint("BOTTOMLEFT", 0, 6)
+    self.friendsNote:SetPoint("RIGHT", -112, 0)
+    self.friendsNote:SetWordWrap(true)
+
+    local options = Theme:CreateButton(page, "RANK_OPTIONS", 100, 22, function()
+        ns.Options:Open()
+    end)
+    options:SetPoint("BOTTOMRIGHT", 0, 0)
+end
+
 --------------------------------------------------------------------------------
 -- Refresh
 --------------------------------------------------------------------------------
@@ -447,6 +478,12 @@ function Stats:Refresh()
     self.pageSelector:Refresh()
     for value, frame in pairs(self.pages) do
         frame:SetShown(value == page)
+    end
+    -- The ranking is the same whatever the scope.
+    self.scopeSelector:SetShown(page ~= "friends")
+    if page == "friends" then
+        self:RefreshFriends()
+        return
     end
 
     local data
@@ -586,5 +623,48 @@ function Stats:RefreshPrey(data)
         return { ns.Stats.QuestName(entry), ns.FormatInteger(entry.xp), entry.level or "?" }
     end, "STATS_NO_DATA")
 end
+
+--- Seen column: now for the logged character, else how long ago.
+local function SeenText(entry)
+    if entry.current then
+        return L["CHAR_SEEN_NOW"]
+    end
+    if not entry.seen then
+        return UNKNOWN()
+    end
+    return L["CHAR_SEEN_AGO"]:format(ns.FormatDuration(math.max(0, time() - entry.seen)))
+end
+
+function Stats:RefreshFriends()
+    local ranking = ns.Ranking
+    local accent = Theme.Hex(Theme.colors.accent)
+    self.friendsTable:SetEntries(ranking:GetEntries(), function(entry, rank)
+        local name = ns.ColorizeByClass(ranking.ShortName(entry.key), entry.class)
+        if entry.mine then
+            name = name .. " " .. accent .. "(" .. L["RANK_MINE"] .. ")|r"
+        end
+        return { rank .. ".", name, entry.level or "?", ns.FormatInteger(entry.deaths), SeenText(entry) }
+    end, "STATS_NO_DATA")
+
+    local code = ranking:GetCode()
+    if not ns.settings.ranking.enabled then
+        self.friendsNote:SetText(L["RANK_DISABLED"])
+    elseif not code then
+        self.friendsNote:SetText(L["RANK_NO_CODE"])
+    else
+        self.friendsNote:SetText(L["RANK_FOOTER"]:format(code))
+    end
+end
+
+ns:RegisterMessage("XPL_RANKING_CHANGED", function()
+    if ns.settings.panel.statsPage == "friends" then
+        ns.MainPanel:Refresh()
+    end
+end)
+ns:RegisterMessage("XPL_DEATH", function()
+    if ns.settings.panel.statsPage == "friends" then
+        ns.MainPanel:Refresh()
+    end
+end)
 
 ns.MainPanel:RegisterView(Stats)
