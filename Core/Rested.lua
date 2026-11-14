@@ -24,7 +24,7 @@ local MAX_FRACTION = 1.5
 --- Stores the rested state of the logged character.
 function Rested:Save()
     local xp, maxXP, level = Compat.GetPlayerExperience()
-    if not maxXP or not level then
+    if not maxXP or maxXP <= 0 or not level then
         return
     end
     local char = ns.char
