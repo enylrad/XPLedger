@@ -273,3 +273,23 @@ function ns.ColorizeByClass(text, classFile)
     end
     return text
 end
+
+--- Converts a printf style global string into an anchored Lua pattern.
+--- Handles plain (%s, %d) and positional (%1$s) tokens.
+function ns.FormatToPattern(format)
+    local pattern = format:gsub("%%%d?%$?[sd]", "\001")
+    pattern = pattern:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
+    pattern = pattern:gsub("\001", "(.-)")
+    return "^" .. pattern .. "$"
+end
+
+--- Realm name as shown to the player. Forever names its realms like
+--- "CAMWOWEU4Realm1PvE": only the ruleset at the end ("PvE") is kept. Other
+--- realm names are returned as they are.
+function ns.ShortRealm(realm)
+    if type(realm) ~= "string" then
+        return realm
+    end
+    local compact = realm:gsub("[%s%-_]", "")
+    return compact:match("[Rr][Ee][Aa][Ll][Mm]%d+(%a+)$") or realm
+end

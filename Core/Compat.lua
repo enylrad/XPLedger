@@ -312,6 +312,35 @@ function Compat.InPetBattle()
 end
 
 --------------------------------------------------------------------------------
+-- Statistics
+--------------------------------------------------------------------------------
+
+local TOTAL_DEATHS_STATISTIC = 60  -- Statistics > Deaths > Total deaths
+
+--- Total deaths of the logged character as the game's statistics count them,
+--- or nil when the client has no statistics (or no value yet, "--").
+function Compat.GetTotalDeathsStatistic()
+    if not GetStatistic then
+        return nil
+    end
+    local ok, value = pcall(GetStatistic, TOTAL_DEATHS_STATISTIC)
+    if not ok then
+        return nil
+    end
+    local number = ns.SafeNumber(value)
+    if number then
+        return number >= 0 and math.floor(number) or nil
+    end
+    local text = ns.SafeString(value)
+    -- Thousands separators depend on the client language ("1,234", "1.234").
+    local digits = text and text:gsub("%D", "")
+    if not digits or digits == "" then
+        return nil
+    end
+    return tonumber(digits)
+end
+
+--------------------------------------------------------------------------------
 -- Battle.net addon data (friends ranking)
 --------------------------------------------------------------------------------
 

@@ -44,14 +44,7 @@ local lastCombatClock = 0
 -- Pattern building
 --------------------------------------------------------------------------------
 
---- Converts a printf style global string into an anchored Lua pattern.
---- Handles plain (%s, %d) and positional (%1$s) tokens.
-local function FormatToPattern(format)
-    local pattern = format:gsub("%%%d?%$?[sd]", "\001")
-    pattern = pattern:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
-    pattern = pattern:gsub("\001", "(.-)")
-    return "^" .. pattern .. "$"
-end
+local FormatToPattern = ns.FormatToPattern
 
 local function AddPattern(list, format)
     if type(format) == "string" and format ~= "" then

@@ -4,6 +4,45 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-11-16
+
+### Changed
+- Long realm names are shortened wherever a realm shows: on Forever,
+  "CAMWOWEU4Realm1PvE" now reads "PvE".
+- Friend death notices only say the first name, plus the short realm when it is not yours.
+- The death counter follows the game's *Total deaths* statistic where the client has it, so
+  it includes the deaths from before XPLedger was installed. Elsewhere it keeps counting by
+  itself.
+- Friends ranking (experimental): it also shares the progress of the current level, shown
+  next to the level ("23 (45%)"). Friends on 0.4.1 cannot read 0.4.2 messages, so update
+  together.
+
+### Fixed
+- Two runs of the same dungeon in a row (leave, reset, enter again) were joined into one.
+  A reset, a completed dungeon or another copy of the instance now starts a new run; a
+  corpse run still continues the same one.
+- The level progress graph is drawn as one continuous line instead of dotted segments.
+
+## [0.4.2] - 2026-11-16 (Español)
+
+### Cambiado
+- Los nombres de reino largos se acortan en todos los sitios donde se muestra un reino: en
+  Forever, «CAMWOWEU4Realm1PvE» ahora se ve como «PvE».
+- Los avisos de muerte de un amigo solo dicen el nombre, más el reino corto cuando no es el
+  tuyo.
+- El contador de muertes sigue la estadística *Muertes totales* del juego cuando el cliente
+  la tiene, así que incluye las muertes de antes de instalar XPLedger. Si no la tiene, sigue
+  contando por su cuenta.
+- Ranking con amigos (experimental): también comparte el porcentaje del nivel actual, que
+  se ve junto al nivel («23 (45%)»). Los amigos con la 0.4.1 no pueden leer los mensajes de
+  la 0.4.2, así que actualizad todos.
+
+### Corregido
+- Dos runs seguidas de la misma mazmorra (salir, reiniciar y volver a entrar) se juntaban
+  en una. Un reinicio, una mazmorra completada u otra copia de la instancia empiezan ahora
+  una run nueva; volver corriendo tras morir sigue siendo la misma run.
+- La gráfica de progreso de nivel se dibuja como una línea continua en vez de a trozos.
+
 ## [0.4.1] - 2026-11-06
 
 ### Changed

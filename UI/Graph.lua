@@ -24,6 +24,7 @@ local Theme = ns.Theme
 local PADDING_LEFT, PADDING_RIGHT, PADDING_TOP, PADDING_BOTTOM = 44, 10, 8, 20
 local GRID_LINES = 4
 local MAX_LINE_POINTS = 240
+local MIN_SEGMENT = 2          -- pixels: shorter segments are merged into the next one
 local BAR_GAP_RATIO = 0.3
 
 local GraphMixin = {}
@@ -168,6 +169,14 @@ function GraphMixin:Line(color, thickness)
     local line = Acquire(self, "lines", function()
         local created = self.plot:CreateLine(nil, "ARTWORK", nil, 1)
         created:SetTexture("Interface\\Buttons\\WHITE8X8")
+        -- Snapping each short segment to the pixel grid on its own leaves
+        -- gaps between them: the line looks dotted.
+        if created.SetSnapToPixelGrid then
+            created:SetSnapToPixelGrid(false)
+        end
+        if created.SetTexelSnappingBias then
+            created:SetTexelSnappingBias(0)
+        end
         return created
     end)
     line:SetVertexColor(color[1], color[2], color[3], color[4] or 1)
@@ -243,6 +252,40 @@ local function Downsample(points, limit)
     return result
 end
 
+--- Points of a scaled series worth drawing: the first, the last and every
+--- point at least MIN_SEGMENT pixels away from the previous one kept.
+local function DrawablePoints(scaled)
+    local kept = { scaled[1] }
+    for i = 2, #scaled - 1 do
+        local last, point = kept[#kept], scaled[i]
+        local dx, dy = point.x - last.x, point.y - last.y
+        if dx * dx + dy * dy >= MIN_SEGMENT * MIN_SEGMENT then
+            kept[#kept + 1] = point
+        end
+    end
+    if #scaled > 1 then
+        kept[#kept + 1] = scaled[#scaled]
+    end
+    return kept
+end
+
+--- Draws a continuous line through scaled points: segments of a useful
+--- length, with a square on every joint so no gap shows between them.
+function GraphMixin:DrawPolyline(scaled, color, thickness)
+    local points = DrawablePoints(scaled)
+    for i = 2, #points do
+        local from, to = points[i - 1], points[i]
+        local line = self:Line(color, thickness)
+        line:SetStartPoint("BOTTOMLEFT", self.plot, from.x, from.y)
+        line:SetEndPoint("BOTTOMLEFT", self.plot, to.x, to.y)
+        if i < #points then
+            local joint = self:Texture(color)
+            joint:SetSize(thickness, thickness)
+            joint:SetPoint("CENTER", self.plot, "BOTTOMLEFT", to.x, to.y)
+        end
+    end
+end
+
 function GraphMixin:RenderLines(width, height)
     local data = self.data
     local xMin, xMax, yMin, yMax = math.huge, -math.huge, math.huge, -math.huge
@@ -273,13 +316,9 @@ function GraphMixin:RenderLines(width, height)
         for i, point in ipairs(points) do
             local x, y = ToScreen(point)
             scaled[i] = { x = x, y = y, point = point }
-            if i > 1 then
-                local line = self:Line(series.color, series.thickness or 2)
-                line:SetStartPoint("BOTTOMLEFT", self.plot, scaled[i - 1].x, scaled[i - 1].y)
-                line:SetEndPoint("BOTTOMLEFT", self.plot, x, y)
-            end
         end
         self.scaled[index] = scaled
+        self:DrawPolyline(scaled, series.color, series.thickness or 2)
     end
 
     -- X axis labels at the start, middle and end.

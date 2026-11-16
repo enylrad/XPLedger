@@ -37,10 +37,10 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
     best rewarded quests). Account-wide bests name the character that holds them.
     *Friends* ranks your characters, and your friends' if you share, by deaths.
 - **Friends ranking** (experimental for now; optional, off by default): your Battle.net
-  friends who use XPLedger with sharing on see each other's deaths in *Stats > Friends*, and
-  can be told when one of them dies ("Luis just died"). The data travels hidden over
-  Battle.net: nothing is written in the chat. Only your characters, levels and deaths are
-  shared.
+  friends who use XPLedger with sharing on see each other's deaths, levels and level progress
+  in *Stats > Friends*, and can be told when one of them dies ("Luis just died"). The data
+  travels hidden over Battle.net: nothing is written in the chat. Only your characters,
+  levels, level progress and deaths are shared.
 - **Goals and alerts**: a level goal with an optional deadline (projected from your recent
   pace) and an experience goal per session. Alerts when a goal is reached, a record is
   beaten or the rested pool runs out, plus a milestone every 10 levels.
@@ -57,7 +57,8 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
     annoyed in its own way (push Nihil too far and it turns into a Void horror for a few
     seconds). The murloc talks mostly in murloc; Nihil is a sweet pessimist, with an optional
     unfiltered voice that mocks how you play. Their language can differ from the addon's.
-  - It keeps count of your deaths and tells you on each one (optional), with special lines
+  - It keeps count of your deaths (the game's *Total deaths* statistic where the client has
+    it) and tells you on each one (optional), with special lines
     on the 5th, 10th, 20th... and 100th death. With the friends ranking on, it also tells you
     when one of your Battle.net friends dies.
   - It reacts to what you do: cheers on a level up, parties on an achievement, fights in

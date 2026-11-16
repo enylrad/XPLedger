@@ -87,7 +87,7 @@ function MainPanel.GetDisplayName(record, withRealm)
         withRealm = IsAmbiguous(record)
     end
     if withRealm and record.realm then
-        name = name .. "-" .. record.realm
+        name = name .. "-" .. ns.ShortRealm(record.realm)
     end
     return name
 end

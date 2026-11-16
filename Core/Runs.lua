@@ -4,13 +4,23 @@
 
     A run starts when the character enters a party or scenario instance and
     ends when it leaves. Coming back to the same instance within the grace
-    period (a corpse run, a quick trip to a vendor) continues the same run.
+    period (a corpse run, a quick trip to a vendor) continues the same run,
+    unless it is a new run of the same instance:
+      - the instance was reset (system message, INSTANCE_RESET_SUCCESS);
+      - the run was completed (LFG_COMPLETION_REWARD, SCENARIO_COMPLETED);
+      - the creatures belong to another copy of the instance. The copy is
+        read from creature GUIDs (Creature-0-<server>-<map>-<copy>-...): after
+        a re-entry the run goes on provisionally, counting what is gained in
+        `resume`, until a creature tells whether the copy is the same. If it
+        is not, the run is closed when it was left and a new one starts with
+        what was gained since the re-entry.
 
     Stored in the character record:
       activeRun                 the run in progress (survives a /reload)
       runs = { <run>, ... }     finished runs, oldest first
       <run> = { instanceID, name, kind, difficulty, level, startedAt,
-                endedAt, leftAt, xp, kills, quests }
+                endedAt, leftAt, xp, kills, quests,
+                copy, completed, pausedAt, resume = { at, xp, kills, quests } }
 ------------------------------------------------------------------------------]]
 
 local _, ns = ...
@@ -24,6 +34,7 @@ local MIN_DURATION = 60     -- shorter runs without experience are discarded
 Runs.KINDS = { party = "dungeon", scenario = "scenario" }
 
 local closeScheduled = false  -- a timer will re-check the run after the grace period
+local resetPattern
 
 --------------------------------------------------------------------------------
 -- Run lifecycle
@@ -54,7 +65,7 @@ function Runs:Finish()
     end
     ns.char.activeRun = nil
     run.endedAt = run.leftAt or time()
-    run.leftAt = nil
+    run.leftAt, run.pausedAt, run.resume = nil, nil, nil
     if run.xp <= 0 and run.endedAt - run.startedAt < MIN_DURATION then
         return
     end
@@ -81,8 +92,13 @@ function Runs:Update()
     end
 
     if tracked then
-        if run and run.instanceID == info.instanceID then
-            run.leftAt = nil
+        if run and run.instanceID == info.instanceID and not run.completed then
+            if run.leftAt then
+                -- Back in: the same run unless the creatures say otherwise.
+                run.pausedAt = run.leftAt
+                run.resume = { at = now, xp = 0, kills = 0, quests = 0 }
+                run.leftAt = nil
+            end
         else
             self:Finish()
             StartRun(info)
@@ -101,16 +117,102 @@ function Runs:Update()
     ns:SendMessage("XPL_STATE_CHANGED")
 end
 
+local function Count(target, gain)
+    target.xp = target.xp + gain.amount
+    if gain.source == "mob" then
+        target.kills = target.kills + 1
+    elseif gain.source == "quest" then
+        target.quests = target.quests + 1
+    end
+end
+
 function Runs:OnExperienceGained(gain)
     local run = ns.char.activeRun
     if not run or run.leftAt then
         return
     end
-    run.xp = run.xp + gain.amount
-    if gain.source == "mob" then
-        run.kills = run.kills + 1
-    elseif gain.source == "quest" then
-        run.quests = run.quests + 1
+    Count(run, gain)
+    if run.resume then
+        Count(run.resume, gain)
+    end
+end
+
+--------------------------------------------------------------------------------
+-- New runs of the same instance
+--------------------------------------------------------------------------------
+
+--- Copy of the instance a creature GUID belongs to, or nil.
+function Runs.ParseCopy(guid)
+    guid = ns.SafeString(guid)
+    if not guid then
+        return nil
+    end
+    local kind, server, map, copy = guid:match("^(%a+)%-%d+%-(%d+)%-(%d+)%-(%d+)%-")
+    if kind ~= "Creature" and kind ~= "Vehicle" then
+        return nil
+    end
+    return ("%s-%s-%s"):format(server, map, copy)
+end
+
+--- Splits the active run: the part before the re-entry is finished when the
+--- instance was left, the part after it becomes a new run.
+function Runs:SplitAtResume(copy)
+    local run = ns.char.activeRun
+    local resume = run.resume
+    run.xp = run.xp - resume.xp
+    run.kills = run.kills - resume.kills
+    run.quests = run.quests - resume.quests
+    run.leftAt = run.pausedAt
+    self:Finish()
+
+    local info = ns.Compat.GetInstanceInfo()
+    local new = StartRun(info or { instanceID = run.instanceID, name = run.name })
+    new.kind = new.kind or run.kind
+    new.startedAt = resume.at
+    new.xp, new.kills, new.quests = resume.xp, resume.kills, resume.quests
+    new.copy = copy
+    ns:SendMessage("XPL_STATE_CHANGED")
+end
+
+--- Learns the instance copy from a unit of the run.
+function Runs:OnUnitSeen(unit)
+    local run = ns.char.activeRun
+    if not run or run.leftAt or (run.copy and not run.resume) then
+        return
+    end
+    local copy = Runs.ParseCopy(UnitGUID(unit))
+    if not copy then
+        return
+    end
+    if not run.copy then
+        run.copy = copy
+        run.resume, run.pausedAt = nil, nil
+    elseif copy == run.copy then
+        run.resume, run.pausedAt = nil, nil
+    else
+        self:SplitAtResume(copy)
+    end
+end
+
+--- The instance was reset: a paused run of it is over.
+function Runs:OnSystemMessage(text)
+    text = ns.SafeString(text)
+    local run = ns.char.activeRun
+    if not text or not resetPattern or not run or not run.leftAt then
+        return
+    end
+    -- A reset clears every instance of the character (or of the party), so
+    -- whatever the name in the message, the paused run is over.
+    if text:match(resetPattern) then
+        self:Finish()
+        ns:SendMessage("XPL_STATE_CHANGED")
+    end
+end
+
+function Runs:OnCompleted()
+    local run = ns.char.activeRun
+    if run and not run.leftAt then
+        run.completed = true
     end
 end
 
@@ -173,6 +275,17 @@ function Runs:OnLogin()
             run.leftAt = time()
         end
     end)
+
+    if type(_G.INSTANCE_RESET_SUCCESS) == "string" then
+        resetPattern = ns.FormatToPattern(_G.INSTANCE_RESET_SUCCESS)
+    end
+    ns:RegisterEvent("CHAT_MSG_SYSTEM", function(_, text) self:OnSystemMessage(text) end)
+    ns:RegisterEvent("LFG_COMPLETION_REWARD", function() self:OnCompleted() end)
+    ns:RegisterEvent("SCENARIO_COMPLETED", function() self:OnCompleted() end)
+    ns:RegisterEvent("PLAYER_TARGET_CHANGED", function() self:OnUnitSeen("target") end)
+    ns:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() self:OnUnitSeen("mouseover") end)
+    ns:RegisterEvent("NAME_PLATE_UNIT_ADDED", function(_, unit) self:OnUnitSeen(unit) end)
+
     ns:RegisterMessage("XPL_XP_GAINED", function(_, gain) self:OnExperienceGained(gain) end)
     ns:RegisterMessage("XPL_DATA_RESET", function(_, key)
         if key == ns.charKey then

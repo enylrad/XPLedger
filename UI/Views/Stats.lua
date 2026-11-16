@@ -436,17 +436,28 @@ function Stats:BuildPrey(page)
     self.preyNote:SetShown(ns.Compat.flavor == "retail")
 end
 
+--- Level of a ranking row with the part of it done: "23 (45%)".
+local function LevelText(entry)
+    if not entry.level then
+        return "?"
+    end
+    if not entry.progress then
+        return tostring(entry.level)
+    end
+    return ("%d (%d%%)"):format(entry.level, math.floor(entry.progress / 10))
+end
+
 function Stats:BuildFriends(page)
     self.friendsTable = CreateTable(page, {
         { key = "RANK_COL_RANK", width = 28, justify = "RIGHT" },
-        { key = "RANK_COL_NAME", width = 250, justify = "LEFT" },
-        { key = "STATS_COL_LEVEL", width = 50, justify = "RIGHT" },
+        { key = "RANK_COL_NAME", width = 210, justify = "LEFT" },
+        { key = "STATS_COL_LEVEL", width = 90, justify = "RIGHT" },
         { key = "RANK_COL_DEATHS", width = 90, justify = "RIGHT" },
         { key = "RANK_COL_SEEN", width = 162, justify = "RIGHT" },
     }, 0, 0, CONTENT_WIDTH, 12)
     self.friendsTable.tooltip = function(tooltip, entry)
-        tooltip:AddLine(ns.ColorizeByClass(entry.key, entry.class))
-        AddRow(tooltip, L["STATS_LEVEL"], entry.level or "?")
+        tooltip:AddLine(ns.ColorizeByClass(ns.Ranking.ShortName(entry.key, true), entry.class))
+        AddRow(tooltip, L["STATS_LEVEL"], LevelText(entry))
         AddRow(tooltip, L["RANK_COL_DEATHS"], ns.FormatInteger(entry.deaths))
         local muted = Theme.colors.muted
         tooltip:AddLine(L[entry.mine and "RANK_TOOLTIP_MINE" or "RANK_TOOLTIP_FRIEND"], muted[1], muted[2], muted[3])
@@ -643,7 +654,7 @@ function Stats:RefreshFriends()
         if entry.mine then
             name = name .. " " .. accent .. "(" .. L["RANK_MINE"] .. ")|r"
         end
-        return { rank .. ".", name, entry.level or "?", ns.FormatInteger(entry.deaths), SeenText(entry) }
+        return { rank .. ".", name, LevelText(entry), ns.FormatInteger(entry.deaths), SeenText(entry) }
     end, "STATS_NO_DATA")
 
     self.friendsNote:SetText(L[ranking:IsActive() and "RANK_FOOTER" or "RANK_DISABLED"])
@@ -654,10 +665,12 @@ ns:RegisterMessage("XPL_RANKING_CHANGED", function()
         ns.MainPanel:Refresh()
     end
 end)
-ns:RegisterMessage("XPL_DEATH", function()
-    if ns.settings.panel.statsPage == "friends" then
-        ns.MainPanel:Refresh()
-    end
-end)
+for _, message in ipairs({ "XPL_DEATH", "XPL_DEATH_SYNC" }) do
+    ns:RegisterMessage(message, function()
+        if ns.settings.panel.statsPage == "friends" then
+            ns.MainPanel:Refresh()
+        end
+    end)
+end
 
 ns.MainPanel:RegisterView(Stats)

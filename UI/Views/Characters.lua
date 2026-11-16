@@ -185,7 +185,7 @@ function Characters:Refresh()
             local record = entry.record
             local stats = ns.History:GetCharacterStats(record)
             local name = ns.MainPanel.FormatCharacterName(record, false)
-            local suffix = record.realm and (" |cff8a8f99- " .. record.realm .. "|r") or ""
+            local suffix = record.realm and (" |cff8a8f99- " .. ns.ShortRealm(record.realm) .. "|r") or ""
             if entry.key == ns.charKey then
                 suffix = suffix .. " " .. Theme.Hex(Theme.colors.accent) .. "(" .. L["CHAR_CURRENT"] .. ")|r"
             end
