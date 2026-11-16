@@ -35,12 +35,16 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
     most repeated instance...), *When* (XP per weekday and per hour, best day, streaks),
     *Where* (XP, kills, quests and XP/hour per zone) and *Prey* (most killed creatures and
     best rewarded quests). Account-wide bests name the character that holds them.
-    *Friends* ranks your characters, and your friends' if you share, by deaths.
-- **Friends ranking** (experimental for now; optional, off by default): your Battle.net
-  friends who use XPLedger with sharing on see each other's deaths, levels and level progress
-  in *Stats > Friends*, and can be told when one of them dies ("Luis just died"). The data
-  travels hidden over Battle.net: nothing is written in the chat. Only your characters,
-  levels, level progress and deaths are shared.
+  - *Friends* (shown while sharing is on): your characters and your friends', sorted by deaths, level,
+    leveling speed (levels per hour played) or optimization (levels per active hour, AFK left out),
+    with level and progress, deaths, XP/hour and time played. Click a row for its breakdown:
+    optimization, time to level, kills, quests, runs and XP share by source.
+- **Friends ranking** (optional, off by default): your Battle.net friends who use XPLedger
+  with sharing on see each other in the *Friends* tab, and can be told when one of them dies
+  ("Luis just died") or levels up ("Luis reached level 30"). The data travels hidden over
+  Battle.net and only reaches the friends who share. It shares your characters, level and
+  progress, deaths, XP/hour, optimization, time to level, time played,
+  kills, quests, runs and XP share by source.
 - **Goals and alerts**: a level goal with an optional deadline (projected from your recent
   pace) and an experience goal per session. Alerts when a goal is reached, a record is
   beaten or the rested pool runs out, plus a milestone every 10 levels.
@@ -60,7 +64,7 @@ Supports **Retail (Midnight)**, **WoW: Forever**, **Classic Era / Anniversary** 
   - It keeps count of your deaths (the game's *Total deaths* statistic where the client has
     it) and tells you on each one (optional), with special lines
     on the 5th, 10th, 20th... and 100th death. With the friends ranking on, it also tells you
-    when one of your Battle.net friends dies.
+    when one of your Battle.net friends dies or levels up.
   - It reacts to what you do: cheers on a level up, parties on an achievement, fights in
     combat (and panics at low health where the game shows it), celebrates a win or wipes its
     brow when you run away, is knocked out when you die and floats as a ghost until you are

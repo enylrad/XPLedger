@@ -103,6 +103,14 @@ ns.PetPhrases.esES = {
                 "¡Aaaughibbrgubugbugrguburgle! ¡%s! ¡%d muertes!",
                 "Mrgl trae noticias: %s ha muerto. Total, %d. Mrgl manda pez.",
             },
+            friendlevel = {
+                "¡Mrgl! ¡%s ya es nivel %d! ¡Fiesta en la charca!",
+                "¡Mrrrgl mrgl! ¡%s sube a nivel %d! ¡Mrgl aplaude con aletas!",
+                "¡Aaaughibbrgubugbugrguburgle! ¡%s, nivel %d!",
+                "Mrgl trae noticias: %s ya es nivel %d. ¡Y tú qué, mrgl?",
+                "¡Mrgl mrgl! ¡%s ha llegado al %d! ¡Pez para todos!",
+                "Mrglgl... %s nivel %d. Mrgl un poco celoso.",
+            },
             poke = {
                 "¡Mrglglgl!",
                 "¿Mrrgll?",
@@ -428,6 +436,14 @@ ns.PetPhrases.esES = {
                 "Noticias del abismo: %s, muerte %d.",
                 "%s ha vuelto a la nada. %d veces. Que sea breve.",
                 "Se ha apagado una lucecita: %s. %d en total. Volverá a encenderse.",
+            },
+            friendlevel = {
+                "%s ha subido a nivel %d. El Vacío toma nota.",
+                "Una lucecita más fuerte: %s, nivel %d.",
+                "%s ya es nivel %d. Todo crece, incluso la oscuridad.",
+                "Noticias del abismo: %s ha llegado al %d.",
+                "%s, nivel %d. Me alegro. Un poquito.",
+                "%s sube al %d. Algún día también lo celebraré por ti.",
             },
             poke = {
                 "¿Mm?",
@@ -772,6 +788,14 @@ ns.PetPhrases.esES = {
                 "%s ha muerto. %d. No te rías, que te toca a ti.",
                 "Última hora: %s, muerte número %d. A nadie le sorprende.",
                 "%s se ha caído. %d. Seguro que fue a la izquierda.",
+            },
+            friendlevel = {
+                "%s ya va por el %d. Tú, en cambio...",
+                "%s ha subido a nivel %d. ¿Seguro que jugáis al mismo juego?",
+                "%s, nivel %d. Mientras tanto, aquí estamos.",
+                "Última hora: %s llega al %d. A ti te falta un rato.",
+                "%s ya es nivel %d. Pídele consejo, anda.",
+                "%s sube al %d. No te lo tomes como algo personal. O sí.",
             },
             poke = {
                 "¿Qué quieres?",

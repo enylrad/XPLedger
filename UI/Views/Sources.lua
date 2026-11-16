@@ -12,7 +12,7 @@ local L = ns.L
 
 local Sources = { id = "sources", label = "TAB_SOURCES", followsSelection = true }
 
-local COLUMN_WIDTH = 296
+local COLUMN_WIDTH = (ns.MainPanel.CONTENT_WIDTH - 20) / 2  -- two columns, 20 px apart
 local COLUMN_GAP = 20
 local ROW_HEIGHT = 36
 

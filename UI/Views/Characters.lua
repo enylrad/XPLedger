@@ -23,6 +23,7 @@ local COLUMNS = {
     { key = "CHAR_COL_RESTED", x = 424, width = 80, justify = "RIGHT" },
     { key = "CHAR_COL_SEEN", x = 508, width = 96, justify = "RIGHT" },
 }
+ns.MainPanel.Widen(COLUMNS, 1)
 local RESTED_COLUMN = 5
 local SEEN_COLUMN = 6
 

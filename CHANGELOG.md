@@ -4,6 +4,57 @@ All notable changes to XPLedger are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-11-16
+
+### Added
+- *Friends* tab: the friends ranking has its own tab, sorted by deaths, level, leveling
+  speed (levels per hour played) or optimization (levels gained per active hour, AFK left out). Click a row
+  to see its breakdown: level, deaths, XP/hour, optimization, time to level,
+  time played, speed, kills, quests, runs and the share of XP from each source (kills,
+  quests, exploration...).
+- The friends ranking also shares XP/hour, optimization, time to level, time
+  played, kills, quests, runs and the XP share of each source.
+- Level up notices: when a friend who shares levels up, the pet tells you ("Luis reached
+  level 30"), or a message shows in the middle of the screen if the pet is hidden. Optional,
+  in the options.
+
+### Changed
+- The friends ranking is no longer experimental. Sharing stays as you had it, and the new
+  notices start on.
+- The *Friends* tab only shows while sharing is on. Its options say what is shared, how
+  notices arrive, how many friends share this session, and open the tab.
+- Less traffic: only the first hello goes to every Battle.net friend online; updates only go
+  to the friends who share, and progress updates are sent at most every 5 minutes.
+- The main window is wider, so the seven tabs and the character name fit.
+- Friends on 0.4.2 cannot read 0.5.0 messages, so update together.
+
+## [0.5.0] - 2026-11-16 (Español)
+
+### Añadido
+- Pestaña *Amigos*: el ranking con amigos tiene su propia pestaña, que se puede ordenar por
+  muertes, nivel, velocidad de subida (niveles por hora jugada) u optimización (niveles
+  subidos por hora activa, sin el tiempo AFK). Haz clic en una fila para ver su desglose:
+  nivel, muertes, XP por hora, optimización, tiempo para subir, tiempo jugado, velocidad, enemigos muertos,
+  misiones, runs y el % de XP de cada fuente (enemigos, misiones, exploración...).
+- El ranking con amigos también comparte la XP por hora, la optimización, el
+  tiempo para subir, el tiempo jugado, los enemigos muertos, las misiones, las runs y el % de
+  XP de cada fuente.
+- Avisos de subida de nivel: cuando un amigo que comparte sube de nivel, te lo dice la
+  mascota («Luis ha subido a nivel 30»), o sale un mensaje en el centro de la pantalla si la
+  mascota está oculta. Opcional, en las opciones.
+
+### Cambiado
+- El ranking con amigos deja de ser experimental. Compartir sigue como lo tenías y los
+  avisos nuevos vienen activados.
+- La pestaña *Amigos* solo aparece con compartir activado. Sus opciones dicen qué se
+  comparte, cómo llegan los avisos y cuántos amigos comparten en esta sesión, y abren la pestaña.
+- Menos tráfico: solo el saludo inicial llega a todos tus amigos de Battle.net conectados; las
+  actualizaciones solo van a los amigos que comparten, y el progreso se envía como mucho cada
+  5 minutos.
+- La ventana principal es más ancha, para que quepan las siete pestañas y el nombre del
+  personaje.
+- Los amigos con la 0.4.2 no pueden leer los mensajes de la 0.5.0, así que actualizad todos.
+
 ## [0.4.2] - 2026-11-16
 
 ### Changed

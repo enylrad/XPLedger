@@ -13,7 +13,7 @@ local L = ns.L
 
 local Levels = { id = "levels", label = "TAB_LEVELS", followsSelection = true }
 
-local CONTENT_WIDTH = 612
+local CONTENT_WIDTH = ns.MainPanel.CONTENT_WIDTH
 local TILE_GAP = 8
 local ROW_HEIGHT = 20
 local VISIBLE_ROWS = 6
@@ -28,6 +28,7 @@ local COLUMNS = {
     { key = "LEVELS_COL_SOURCE", x = 420, width = 110, justify = "LEFT" },
     { key = "LEVELS_COL_DIFF", x = 530, width = 78, justify = "RIGHT" },
 }
+ns.MainPanel.Widen(COLUMNS, 5)
 local DIFF_COLUMN = 6
 local BAR_X = 144
 

@@ -4,7 +4,7 @@
 ## Notes-esES: Controla tu ritmo de experiencia, estima el tiempo que falta para subir de nivel y guarda el historial de subida de todos tus personajes.
 ## Notes-esMX: Controla tu ritmo de experiencia, estima el tiempo que falta para subir de nivel y guarda el historial de subida de todos tus personajes.
 ## Author: enylrad
-## Version: 0.4.2
+## Version: 0.5.0
 ## X-Curse-Project-ID: 1723925
 ## Category: Quests
 ## Category-enUS: Quests
@@ -62,6 +62,7 @@ UI\Views\Characters.lua
 UI\Views\Sources.lua
 UI\Views\Runs.lua
 UI\Views\Stats.lua
+UI\Views\Friends.lua
 UI\Options.lua
 UI\Broker.lua
 

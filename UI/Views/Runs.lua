@@ -14,14 +14,14 @@ local L = ns.L
 
 local Runs = { id = "runs", label = "TAB_RUNS", followsSelection = true }
 
-local CONTENT_WIDTH = 612
+local CONTENT_WIDTH = ns.MainPanel.CONTENT_WIDTH
 local TILE_GAP = 8
 local ROW_HEIGHT = 20
 local VISIBLE_ROWS = 9
 local TILES_TOP = -28
 local TABLE_TOP = -110
 local RECORD_ROWS = 9
-local COLUMN_WIDTH = 296
+local COLUMN_WIDTH = (ns.MainPanel.CONTENT_WIDTH - 20) / 2  -- two columns, 20 px apart
 
 local MODES = {
     { value = "runs", label = "RUNS_MODE_RUNS" },
@@ -37,6 +37,7 @@ local COLUMNS = {
     { key = "RUNS_COL_RATE", x = 426, width = 80, justify = "RIGHT" },
     { key = "RUNS_COL_DATE", x = 510, width = 98, justify = "RIGHT" },
 }
+ns.MainPanel.Widen(COLUMNS, 1)
 
 --------------------------------------------------------------------------------
 -- Helpers

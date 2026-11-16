@@ -500,13 +500,15 @@ function Pet:Say(text, duration)
     speech:Show()
 end
 
---- Tells that a Battle.net friend of the ranking died (see Ranking). Returns
---- false when the pet is not on screen, so the caller can tell it another way.
-function Pet:SayFriendDeath(name, deaths)
+--- Tells news about a Battle.net friend of the ranking (see Ranking):
+--- `event` is "frienddeath" (value = deaths) or "friendlevel" (value = the
+--- new level). Returns false when the pet is not on screen, so the caller
+--- can tell it another way.
+function Pet:SayFriend(event, name, value)
     if not (self.frame and self.frame:IsShown()) then
         return false
     end
-    local line = ns.PetTalk:Event("frienddeath", name, deaths)
+    local line = ns.PetTalk:Event(event, name, value)
     if not line then
         return false
     end

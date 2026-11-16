@@ -192,8 +192,10 @@ function Skin:CreateTab(window, label, onClick)
         self.text:SetTextColor(color[1], color[2], color[3])
     end
 
-    function tab:UpdateWidth()
-        self:SetWidth(math.max(60, self.text:GetStringWidth() + 20))
+    --- `padding` (default 12) shrinks when the tabs do not fit the window.
+    function tab:UpdateWidth(padding)
+        padding = padding or 12
+        self:SetWidth(math.max(40 + padding * 5 / 3, self.text:GetStringWidth() + padding + 8))
     end
 
     tab:SetScript("OnEnter", function(self)

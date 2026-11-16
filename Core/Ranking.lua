@@ -1,32 +1,52 @@
 --[[----------------------------------------------------------------------------
     XPLedger - Friends ranking
-    Optional and experimental (settings.ranking.enabled, off by default):
-    Battle.net friends who run XPLedger with sharing on see each other's
-    deaths, level and level progress in a ranking (Stats view, Friends page),
-    and can be told when one of them dies (settings.ranking.notifyDeaths).
+    Optional (settings.ranking.enabled, off by default): Battle.net friends
+    who run XPLedger with sharing on see each other's progress in a ranking
+    (Friends view): level and level progress, deaths, XP/hour,
+    time to level, time played, kills, quests and runs. They can be told
+    when one of them dies (settings.ranking.notifyDeaths) or levels up
+    (settings.ranking.notifyLevels).
 
     Everything travels as hidden Battle.net addon data (Compat.
-    SendBattleNetData): nothing is written in the chat, and only Battle.net
-    friends online in WoW receive it. Messages are one line:
+    SendBattleNetData). Light on traffic:
+      - H goes to every Battle.net friend online in WoW, to find who shares;
+      - everything else only goes to the friends that answered (peers);
+      - one pending message per friend, sent at most every SEND_INTERVAL;
+      - progress updates at most every PROGRESS_INTERVAL, and only when the
+        progress moved at least PROGRESS_STEP.
 
-      3;<kind>;<Name-Realm>;<CLASS>;<level>;<progress>;<deaths>;<server time>
+    Messages are one line of `;` separated fields:
+
+      4;<kind>;<Name-Realm>;<CLASS>;<level>;<progress>;<deaths>;<xp/hour>;
+        <eta>;<played>;<kills>;<quests>;<runs>;<efficiency>;<% mob>;<% quest>;
+        <% exploration>;<% pet battle>;<% other>;<server time>
 
       H  hello: sent on login and when sharing is turned on; the friends
          who share answer with U
-      U  update: on a level up, as the answer to H (to that friend only),
-         and while gaining experience (at most every PROGRESS_INTERVAL, when
-         the progress moved at least PROGRESS_STEP)
+      U  update: as the answer to H (to that friend only), and while
+         gaining experience
+      L  level up: like U, and the friends may be told
       D  death: like U, and the friends may be told
 
-    <progress> is the part of the level done in thousandths (0-999), empty
-    at the level cap or when unknown. Protocol 2 (0.4.1) had no progress
-    field and is still read. Protocol 1 (0.4.0) also carried a group code;
-    those messages are ignored. A malformed message or one with numbers out of range is dropped
-    silently. Received names never carry UI escape sequences.
+    <progress> is the part of the level done in thousandths (0-999); <eta>
+    and <played> are seconds. <progress>, <xp/hour>, <eta> and <played> are
+    empty when unknown (level cap, no rate yet, /played not read).
+    <efficiency> is the "optimization": hundredths of a level gained per
+    active hour (AFK time left out) since tracking started, empty when
+    unknown (see Ranking.GetEfficiency). The
+    <% ...> fields split the experience earned by source (see Sources),
+    empty while the character has earned none.
+
+    Older protocols are still read, without the fields they lack (see
+    LAYOUTS): 3 (0.4.2) and 2 (0.4.1). Protocol 1 (0.4.0) carried a group
+    code; those messages are ignored. A malformed message or one with
+    numbers out of range is dropped silently. Received names never carry
+    UI escape sequences.
 
     Stored for the whole account:
       XPLedgerDB.ranking = {
-          members = { ["Name-Realm"] = { class, level, progress, deaths, seen, at } },
+          members = { ["Name-Realm"] = { class, level, progress, deaths, rate,
+                      eta, played, kills, quests, runs, seen, at } },
       }
     `seen` is the local time of the last message, `at` the sender's server
     time. The account's own characters come from the local records, never
@@ -38,21 +58,67 @@ local _, ns = ...
 local Ranking = ns:NewModule("Ranking")
 
 local PREFIX = "XPLedger"
-local PROTOCOL = "3"
-local FIELDS = { ["2"] = 7, ["3"] = 8 }  -- fields per readable protocol
-local SEND_INTERVAL = 0.3     -- seconds between two messages
+local PROTOCOL = "4"
+local SEND_INTERVAL = 0.5     -- seconds between two messages
 local BLOCKED_RETRY = 5       -- seconds to wait while the game blocks them
 local LOGIN_DELAY = 8         -- seconds after login before saying hello
-local FRESH_DEATH = 120       -- older deaths update the ranking silently
-local MAX_LEVEL = 200
-local MAX_DEATHS = 1000000
+local FRESH_NOTICE = 120      -- older deaths and level ups update the ranking silently
 local MAX_MEMBERS = 200
 local MAX_NAME_LENGTH = 64
-local PROGRESS_INTERVAL = 120 -- seconds between two progress updates
-local PROGRESS_STEP = 10      -- thousandths of a level worth an update
+local PROGRESS_INTERVAL = 300 -- seconds between two progress updates
+local PROGRESS_STEP = 20      -- thousandths of a level worth an update
+Ranking.RATE_FRESH = 900      -- seconds: an older XP/hour is not shown
+
+-- Values after <CLASS>, per readable protocol.
+local LAYOUTS = {
+    ["2"] = { "level", "deaths", "at" },
+    ["3"] = { "level", "progress", "deaths", "at" },
+    ["4"] = {
+        "level", "progress", "deaths", "rate", "eta", "played", "kills", "quests", "runs", "efficiency",
+        "shareMob", "shareQuest", "shareExploration", "sharePetbattle", "shareOther", "at",
+    },
+}
+
+-- Range of every value; `optional` values may be empty.
+local VALUES = {
+    level = { 1, 200 },
+    progress = { 0, 999, optional = true },
+    deaths = { 0, 1000000 },
+    rate = { 0, 1000000000, optional = true },
+    eta = { 0, 10000000, optional = true },
+    played = { 0, 1000000000, optional = true },
+    kills = { 0, 10000000 },
+    quests = { 0, 10000000 },
+    runs = { 0, 10000000 },
+    efficiency = { 0, 100000, optional = true },
+    shareMob = { 0, 100, optional = true },
+    shareQuest = { 0, 100, optional = true },
+    shareExploration = { 0, 100, optional = true },
+    sharePetbattle = { 0, 100, optional = true },
+    shareOther = { 0, 100, optional = true },
+    at = { 0, 4294967295 },
+}
+
+-- Values that belong to one level: dropped when an older message moves
+-- the member to another level without them.
+local PER_LEVEL = { progress = true, eta = true }
+local MIN_EFFICIENCY_ACTIVE = 1800  -- active seconds before the efficiency means something
+local MIN_EFFICIENCY_LEVELS = 0.25
+
+local KINDS = { H = true, U = true, L = true, D = true }
+
+-- Experience sources, in the order shown, and the value carrying each share.
+Ranking.SOURCES = {
+    { source = "mob", key = "shareMob" },
+    { source = "quest", key = "shareQuest" },
+    { source = "exploration", key = "shareExploration" },
+    { source = "petbattle", key = "sharePetbattle" },
+    { source = "other", key = "shareOther" },
+}
 
 local queue = {}
 local flushing = false
+local peers = {}  -- game accounts that sent a valid message this login
 local lastProgressAt = 0
 local lastProgress
 
@@ -73,11 +139,21 @@ function Ranking:IsActive()
     return Settings().enabled == true
 end
 
+--- Number of friends' game accounts that sent a valid message this login.
+function Ranking:CountPeers()
+    local count = 0
+    for _ in pairs(peers) do
+        count = count + 1
+    end
+    return count
+end
+
 --- Turns sharing on or off.
 function Ranking:SetEnabled(enabled)
     Settings().enabled = enabled and true or false
     if not enabled then
         wipe(queue)
+        wipe(peers)
     end
     ns:SendMessage("XPL_RANKING_CHANGED")
     self:Announce("H")
@@ -100,13 +176,115 @@ function Ranking.GetProgress()
     return math.max(0, math.min(999, math.floor(xp / maxXP * 1000)))
 end
 
-local function Encode(kind)
-    local level = ns.SafeNumber(UnitLevel("player")) or (ns.char and ns.char.level) or 0
-    local progress = Ranking.GetProgress()
-    return table.concat({
-        PROTOCOL, kind, ns.charKey, ns.char.class or "UNKNOWN", tostring(level),
-        progress and tostring(progress) or "", tostring(ns.Deaths:GetCount()), tostring(GetServerTime()),
-    }, ";")
+--- Finished runs of a character record that gave experience.
+function Ranking.CountRuns(record)
+    local count = 0
+    for _, run in ipairs(type(record.runs) == "table" and record.runs or {}) do
+        if (run.xp or 0) > 0 then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+local function Whole(value)
+    value = ns.SafeNumber(value)
+    return value and value >= 0 and math.floor(value) or nil
+end
+
+--- Percent of the experience earned from each source (keys of
+--- Ranking.SOURCES, rounded), or nil when nothing was earned yet.
+function Ranking.GetShares(record)
+    local totals = type(record.totals) == "table" and record.totals
+    local sources = totals and type(totals.sources) == "table" and totals.sources
+    if not sources then
+        return nil
+    end
+    local sum = 0
+    for _, amount in pairs(sources) do
+        sum = sum + (ns.SafeNumber(amount) or 0)
+    end
+    if sum <= 0 then
+        return nil
+    end
+    local shares = {}
+    for _, item in ipairs(Ranking.SOURCES) do
+        local amount = ns.SafeNumber(sources[item.source]) or 0
+        shares[item.key] = math.floor(amount / sum * 100 + 0.5)
+    end
+    -- Unknown sources count as "other".
+    local known = 0
+    for _, item in ipairs(Ranking.SOURCES) do
+        known = known + (ns.SafeNumber(sources[item.source]) or 0)
+    end
+    shares.shareOther = math.floor(((ns.SafeNumber(sources.other) or 0) + sum - known) / sum * 100 + 0.5)
+    return shares
+end
+
+--- XP/hour and time to level of the logged character, or nil.
+function Ranking.GetPace()
+    if ns.Compat.IsAtMaxLevel() then
+        return nil, nil
+    end
+    local estimate = ns.Tracker:GetEstimate()
+    return Whole(estimate.rate or estimate.sessionRate), Whole(estimate.eta)
+end
+
+--- Levels gained per active hour of a character record since tracking
+--- started (the "optimization"), or nil with too little data. Both the
+--- levels and the time come from the progress samples (History), which
+--- keep their first point; each gap between two samples counts at most the
+--- AFK threshold, as the Tracker does.
+function Ranking.GetEfficiency(record)
+    local samples = type(record) == "table" and type(record.samples) == "table" and record.samples
+    local t, v = samples and samples.t, samples and samples.v
+    if type(t) ~= "table" or type(v) ~= "table" or #t < 2 or #v ~= #t then
+        return nil
+    end
+    local afkSeconds = (ns.SafeNumber(ns.settings.afkThreshold) or 5) * 60
+    local active = 0
+    for i = 2, #t do
+        active = active + ns.Clamp((ns.SafeNumber(t[i]) or 0) - (ns.SafeNumber(t[i - 1]) or 0), 0, afkSeconds)
+    end
+    local levels = (ns.SafeNumber(v[#v]) or 0) - (ns.SafeNumber(v[1]) or 0)
+    if active < MIN_EFFICIENCY_ACTIVE or levels < MIN_EFFICIENCY_LEVELS then
+        return nil
+    end
+    return levels / (active / 3600)
+end
+
+--- Values of the logged character, as LAYOUTS name them.
+local function CurrentValues(level)
+    local totals = type(ns.char.totals) == "table" and ns.char.totals or {}
+    local rate, eta = Ranking.GetPace()
+    local values = Ranking.GetShares(ns.char) or {}
+    local base = {
+        level = level or ns.SafeNumber(UnitLevel("player")) or ns.char.level or 1,
+        progress = Ranking.GetProgress(),
+        deaths = ns.Deaths:GetCount(),
+        rate = rate,
+        eta = eta,
+        played = Whole(ns.History and ns.History:GetPlayedNow()),
+        kills = Whole(totals.kills) or 0,
+        quests = Whole(totals.quests) or 0,
+        runs = Ranking.CountRuns(ns.char),
+        efficiency = Whole((Ranking.GetEfficiency(ns.char) or -1) * 100),
+        at = GetServerTime(),
+    }
+    for key, value in pairs(base) do
+        values[key] = value
+    end
+    return values
+end
+
+local function Encode(kind, level)
+    local values = CurrentValues(level)
+    local fields = { PROTOCOL, kind, ns.charKey, ns.char.class or "UNKNOWN" }
+    for _, key in ipairs(LAYOUTS[PROTOCOL]) do
+        local value = values[key]
+        fields[#fields + 1] = value and tostring(value) or ""
+    end
+    return table.concat(fields, ";")
 end
 
 local function ToInteger(text, low, high)
@@ -121,7 +299,7 @@ local function ToInteger(text, low, high)
 end
 
 --- Parses a received line. Returns a message table, or nil when the line is
---- not a valid message.
+--- not a valid message. `message.carried` lists the values the protocol has.
 function Ranking.Decode(text)
     if type(text) ~= "string" or #text > 255 then
         return nil
@@ -130,12 +308,12 @@ function Ranking.Decode(text)
     for field in (text .. ";"):gmatch("([^;]*);") do
         fields[#fields + 1] = field
     end
-    local protocol = fields[1]
-    if not FIELDS[protocol] or #fields ~= FIELDS[protocol] then
+    local layout = LAYOUTS[fields[1]]
+    if not layout or #fields ~= #layout + 4 then
         return nil
     end
     local kind, name, class = fields[2], fields[3], fields[4]
-    if kind ~= "H" and kind ~= "U" and kind ~= "D" then
+    if not KINDS[kind] then
         return nil
     end
     -- "Name-Realm", without pipes (UI escape sequences) or control characters.
@@ -145,27 +323,19 @@ function Ranking.Decode(text)
     if #class > 20 or not class:match("^[A-Z]+$") then
         return nil
     end
-    local level = ToInteger(fields[5], 1, MAX_LEVEL)
-    local progress
-    local rest = 6
-    if protocol == "3" then
-        if fields[6] ~= "" then
-            progress = ToInteger(fields[6], 0, 999)
-            if not progress then
+    local message = { kind = kind, name = name, class = class, carried = {} }
+    for index, key in ipairs(layout) do
+        local field, range = fields[index + 4], VALUES[key]
+        message.carried[key] = true
+        if not (range.optional and field == "") then
+            local value = ToInteger(field, range[1], range[2])
+            if not value then
                 return nil
             end
+            message[key] = value
         end
-        rest = 7
     end
-    local deaths = ToInteger(fields[rest], 0, MAX_DEATHS)
-    local at = ToInteger(fields[rest + 1], 0, 4294967295)
-    if not level or not deaths or not at then
-        return nil
-    end
-    return {
-        kind = kind, name = name, class = class, level = level,
-        progress = progress, hasProgress = protocol ~= "2", deaths = deaths, at = at,
-    }
+    return message
 end
 
 local function Flush()
@@ -204,16 +374,24 @@ local function Enqueue(target, text)
     end
 end
 
---- Sends a message of `kind` to every Battle.net friend online in WoW.
-function Ranking:Announce(kind)
+--- Sends a message of `kind`: H to every Battle.net friend online in WoW
+--- (to find who shares), anything else only to the friends who answered.
+--- `level` overrides the level read from the game (right after a level up).
+function Ranking:Announce(kind, level)
     if not self:IsActive() or not ns.char then
         return
     end
-    local text = Encode(kind)
+    local text = Encode(kind, level)
     lastProgressAt, lastProgress = time(), Ranking.GetProgress()
-    ns.Compat.ForEachOnlineWoWFriend(function(target)
-        Enqueue(target, text)
-    end)
+    if kind == "H" then
+        ns.Compat.ForEachOnlineWoWFriend(function(target)
+            Enqueue(target, text)
+        end)
+    else
+        for target in pairs(peers) do
+            Enqueue(target, text)
+        end
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -264,19 +442,26 @@ function Ranking.NoticeName(key)
     return name .. "-" .. ns.ShortRealm(realm)
 end
 
-function Ranking:NotifyDeath(message)
-    local L = ns.L
+--- Tells about a friend: the pet says `event` when it is shown, else a
+--- message shows in the middle of the screen (never in the chat).
+function Ranking:Notify(message, event, textKey, value)
     local name = ns.ColorizeByClass(Ranking.NoticeName(message.name), message.class)
-    if ns.Pet and ns.Pet.SayFriendDeath and ns.Pet:SayFriendDeath(name, message.deaths) then
+    if ns.Pet and ns.Pet.SayFriend and ns.Pet:SayFriend(event, name, value) then
         -- The pet said it.
     elseif RaidNotice_AddMessage and RaidWarningFrame and ChatTypeInfo and ChatTypeInfo.RAID_WARNING then
-        -- In the middle of the screen, never in the chat.
-        RaidNotice_AddMessage(RaidWarningFrame, L["RANK_FRIEND_DIED"]:format(name, message.deaths),
-            ChatTypeInfo.RAID_WARNING)
+        RaidNotice_AddMessage(RaidWarningFrame, ns.L[textKey]:format(name, value), ChatTypeInfo.RAID_WARNING)
     end
     if ns.settings.alerts.sound and PlaySound and SOUNDKIT and SOUNDKIT.RAID_WARNING then
         PlaySound(SOUNDKIT.RAID_WARNING)
     end
+end
+
+function Ranking:NotifyDeath(message)
+    self:Notify(message, "frienddeath", "RANK_FRIEND_DIED", message.deaths)
+end
+
+function Ranking:NotifyLevel(message)
+    self:Notify(message, "friendlevel", "RANK_FRIEND_LEVEL", message.level)
 end
 
 function Ranking:OnData(text, sender)
@@ -287,6 +472,9 @@ function Ranking:OnData(text, sender)
     if not message or ns.db.characters[message.name] then
         return
     end
+    if sender then
+        peers[sender] = true
+    end
     local members = Members()
     local member = members[message.name]
     if not member then
@@ -296,21 +484,25 @@ function Ranking:OnData(text, sender)
         member = {}
         members[message.name] = member
     end
-    if message.hasProgress then
-        member.progress = message.progress
-    elseif member.level ~= message.level then
-        -- An older version: the progress of another level is meaningless.
-        member.progress = nil
+    local levelChanged = member.level ~= message.level
+    for key in pairs(VALUES) do
+        if message.carried[key] then
+            member[key] = message[key]
+        elseif levelChanged and PER_LEVEL[key] then
+            -- An older version: values of another level are meaningless.
+            member[key] = nil
+        end
     end
-    member.class, member.level, member.deaths = message.class, message.level, message.deaths
-    member.at, member.seen = message.at, time()
+    member.class, member.seen = message.class, time()
     ns:SendMessage("XPL_RANKING_CHANGED")
 
+    local fresh = math.abs(GetServerTime() - message.at) <= FRESH_NOTICE
     if message.kind == "H" and sender then
         Enqueue(sender, Encode("U"))
-    elseif message.kind == "D" and Settings().notifyDeaths
-        and math.abs(GetServerTime() - message.at) <= FRESH_DEATH then
+    elseif message.kind == "D" and fresh and Settings().notifyDeaths then
         self:NotifyDeath(message)
+    elseif message.kind == "L" and fresh and Settings().notifyLevels then
+        self:NotifyLevel(message)
     end
 end
 
@@ -342,41 +534,106 @@ function Ranking:OnExperienceGained()
     self:Announce("U")
 end
 
---- Every row of the ranking, most deaths first: the account's characters
---- (`mine` = true) and the friends who share.
-function Ranking:GetEntries()
+--- Levels gained per hour played (level 1 counts as none), or nil.
+function Ranking.GetSpeed(entry)
+    if not entry.level or not entry.played or entry.played < 600 then
+        return nil
+    end
+    return (entry.level - 1 + (entry.progress or 0) / 1000) / (entry.played / 3600)
+end
+
+local SORTS = {
+    deaths = function(entry) return entry.deaths end,
+    level = function(entry) return (entry.level or 0) + (entry.progress or 0) / 1000 end,
+    speed = function(entry) return Ranking.GetSpeed(entry) end,
+    optimization = function(entry) return entry.efficiency end,
+}
+
+local function OwnEntry(key, record)
+    local current = key == ns.charKey
+    local totals = type(record.totals) == "table" and record.totals or {}
+    local entry = {
+        key = key,
+        class = record.class,
+        level = record.level,
+        progress = current and Ranking.GetProgress() or SavedProgress(record),
+        deaths = ns.Deaths:GetCount(record),
+        played = Whole(record.played),
+        kills = Whole(totals.kills) or 0,
+        quests = Whole(totals.quests) or 0,
+        runs = Ranking.CountRuns(record),
+        shares = Ranking.GetShares(record),
+        efficiency = Ranking.GetEfficiency(record),
+        seen = current and time() or record.lastSeen,
+        mine = true,
+        current = current,
+    }
+    if current then
+        entry.rate, entry.eta = Ranking.GetPace()
+        entry.played = Whole(ns.History and ns.History:GetPlayedNow()) or entry.played
+    end
+    return entry
+end
+
+local function FriendEntry(key, member)
+    local entry = {
+        key = key,
+        class = member.class,
+        level = member.level,
+        progress = member.progress,
+        deaths = member.deaths or 0,
+        played = member.played,
+        kills = member.kills,
+        quests = member.quests,
+        runs = member.runs,
+        efficiency = member.efficiency and member.efficiency / 100,
+        seen = member.seen,
+    }
+    if member.shareMob then
+        entry.shares = {}
+        for _, item in ipairs(Ranking.SOURCES) do
+            entry.shares[item.key] = member[item.key] or 0
+        end
+    end
+    -- The pace only means something while the friend is still playing.
+    local age = member.seen and time() - member.seen
+    if age and age <= Ranking.RATE_FRESH then
+        entry.rate = member.rate
+        entry.eta = member.eta and math.max(0, member.eta - age) or nil
+    end
+    return entry
+end
+
+--- Every row of the ranking: the account's characters (`mine` = true) and
+--- the friends who share, sorted by `sort` ("deaths", "level", "speed" or
+--- "optimization" (levels per active hour),
+--- highest first; rows without a value go last).
+function Ranking:GetEntries(sort)
     local entries = {}
     for key, record in pairs(ns.db.characters) do
         if type(record) == "table" then
-            entries[#entries + 1] = {
-                key = key,
-                class = record.class,
-                level = record.level,
-                progress = key == ns.charKey and Ranking.GetProgress() or SavedProgress(record),
-                deaths = ns.Deaths:GetCount(record),
-                seen = key == ns.charKey and time() or record.lastSeen,
-                mine = true,
-                current = key == ns.charKey,
-            }
+            entries[#entries + 1] = OwnEntry(key, record)
         end
     end
     if self:IsActive() then
         for key, member in pairs(Members()) do
             if not ns.db.characters[key] then
-                entries[#entries + 1] = {
-                    key = key,
-                    class = member.class,
-                    level = member.level,
-                    progress = member.progress,
-                    deaths = member.deaths or 0,
-                    seen = member.seen,
-                }
+                entries[#entries + 1] = FriendEntry(key, member)
             end
         end
     end
+    local value = SORTS[sort] or SORTS.deaths
+    local keys = {}
+    for _, entry in ipairs(entries) do
+        keys[entry] = value(entry)
+    end
     table.sort(entries, function(a, b)
-        if a.deaths ~= b.deaths then
-            return a.deaths > b.deaths
+        local va, vb = keys[a], keys[b]
+        if va ~= vb then
+            if va == nil or vb == nil then
+                return vb == nil
+            end
+            return va > vb
         end
         return a.key < b.key
     end)
@@ -406,7 +663,7 @@ function Ranking:OnLogin()
         end
     end)
     ns:RegisterMessage("XPL_DEATH", function() self:Announce("D") end)
-    ns:RegisterMessage("XPL_LEVEL_UP", function() self:Announce("U") end)
+    ns:RegisterMessage("XPL_LEVEL_UP", function(_, _, newLevel) self:Announce("L", ns.SafeNumber(newLevel)) end)
     ns:RegisterMessage("XPL_DEATH_SYNC", function() self:Announce("U") end)
     ns:RegisterMessage("XPL_XP_GAINED", function() self:OnExperienceGained() end)
     -- Battle.net friends are not known right away after logging in.

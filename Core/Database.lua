@@ -91,8 +91,9 @@ local DEFAULT_SETTINGS = {
         deathCount = true, -- says how many times the character has died, on each death
     },
     ranking = {           -- friends ranking over Battle.net, see Ranking
-        enabled = false,  -- share this account's deaths with Battle.net friends
+        enabled = false,  -- share progress with Battle.net friends; shows the Friends tab
         notifyDeaths = true, -- tell when a friend who shares dies
+        notifyLevels = true, -- tell when a friend who shares levels up
     },
     panel = {
         tab = "overview",
@@ -101,6 +102,7 @@ local DEFAULT_SETTINGS = {
         runsMode = "runs",
         statsScope = "character",
         statsPage = "summary",
+        rankingSort = "deaths", -- Friends view: "deaths", "level" or "speed"
     },
 }
 

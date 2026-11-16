@@ -6,8 +6,8 @@
       when      experience per weekday and per hour, days played, streaks
       where     experience per zone
       prey      most killed creatures and best rewarded quests
-      friends   deaths ranking of the account and the Battle.net friends who
-                share (see Ranking); it has no scope
+    The friends ranking has its own view (see Friends), built from the same
+    blocks (ns.StatsBlocks).
 ------------------------------------------------------------------------------]]
 
 local _, ns = ...
@@ -17,7 +17,7 @@ local L = ns.L
 
 local Stats = { id = "stats", label = "TAB_STATS", followsSelection = true }
 
-local CONTENT_WIDTH = 612
+local CONTENT_WIDTH = ns.MainPanel.CONTENT_WIDTH
 local TILE_GAP = 8
 local TILE_HEIGHT = 48
 local TILE_COLUMNS = 4
@@ -36,7 +36,6 @@ local PAGES = {
     { value = "when", label = "STATS_PAGE_WHEN" },
     { value = "where", label = "STATS_PAGE_WHERE" },
     { value = "prey", label = "STATS_PAGE_PREY" },
-    { value = "friends", label = "STATS_PAGE_FRIENDS" },
 }
 
 local TILE_WIDTH = (CONTENT_WIDTH - TILE_GAP * (TILE_COLUMNS - 1)) / TILE_COLUMNS
@@ -215,6 +214,10 @@ local function CreateTable(parent, columns, x, y, width, rows)
         row:EnableMouse(true)
         local highlight = Theme:CreateTexture(row, { 1, 1, 1, 0.05 }, "HIGHLIGHT")
         highlight:SetAllPoints()
+        local accent = Theme.colors.accent
+        row.selectedTexture = Theme:CreateTexture(row, { accent[1], accent[2], accent[3], 0.12 }, "BACKGROUND")
+        row.selectedTexture:SetAllPoints()
+        row.selectedTexture:Hide()
         row.cells = {}
         for c, column in ipairs(columns) do
             local cell = Theme:CreateText(row, c == 1 and "normal" or "muted", column.justify)
@@ -230,6 +233,11 @@ local function CreateTable(parent, columns, x, y, width, rows)
             end
         end)
         row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        row:SetScript("OnMouseUp", function(self)
+            if self.entry and tableFrame.onClick then
+                tableFrame.onClick(self.entry)
+            end
+        end)
         tableFrame.rows[i] = row
     end
 
@@ -247,6 +255,7 @@ local function CreateTable(parent, columns, x, y, width, rows)
                 for c, cell in ipairs(row.cells) do
                     cell:SetText(values[c] or "")
                 end
+                row.selectedTexture:SetShown(self.isSelected ~= nil and self.isSelected(entry) == true)
                 row:Show()
             else
                 row:Hide()
@@ -306,7 +315,6 @@ function Stats:Build(content)
     self:BuildWhen(self.pages.when)
     self:BuildWhere(self.pages.where)
     self:BuildPrey(self.pages.prey)
-    self:BuildFriends(self.pages.friends)
 end
 
 function Stats:BuildSummary(page)
@@ -377,7 +385,7 @@ function Stats:BuildWhere(page)
         self.whereTiles[index] = tile
     end
     self.zoneTable = CreateTable(page, {
-        { key = "STATS_COL_ZONE", width = 236, justify = "LEFT" },
+        { key = "STATS_COL_ZONE", width = 236 + ns.MainPanel.EXTRA_WIDTH, justify = "LEFT" },
         { key = "STATS_COL_XP", width = 86, justify = "RIGHT" },
         { key = "STATS_COL_KILLS", width = 70, justify = "RIGHT" },
         { key = "STATS_COL_QUESTS", width = 70, justify = "RIGHT" },
@@ -399,7 +407,7 @@ function Stats:BuildPrey(page)
     end
     local half = (CONTENT_WIDTH - 16) / 2
     self.mobTable = CreateTable(page, {
-        { key = "STATS_COL_MOB", width = 150, justify = "LEFT" },
+        { key = "STATS_COL_MOB", width = 150 + ns.MainPanel.EXTRA_WIDTH / 2, justify = "LEFT" },
         { key = "STATS_COL_KILLS", width = 56, justify = "RIGHT" },
         { key = "STATS_COL_XP", width = 70, justify = "RIGHT" },
     }, 0, -60, half, 9)
@@ -411,7 +419,7 @@ function Stats:BuildPrey(page)
     end
 
     self.questTable = CreateTable(page, {
-        { key = "STATS_COL_QUEST", width = 172, justify = "LEFT" },
+        { key = "STATS_COL_QUEST", width = 172 + ns.MainPanel.EXTRA_WIDTH / 2, justify = "LEFT" },
         { key = "STATS_COL_XP", width = 70, justify = "RIGHT" },
         { key = "STATS_COL_LEVEL", width = 34, justify = "RIGHT" },
     }, half + 16, -60, half, 9)
@@ -436,44 +444,6 @@ function Stats:BuildPrey(page)
     self.preyNote:SetShown(ns.Compat.flavor == "retail")
 end
 
---- Level of a ranking row with the part of it done: "23 (45%)".
-local function LevelText(entry)
-    if not entry.level then
-        return "?"
-    end
-    if not entry.progress then
-        return tostring(entry.level)
-    end
-    return ("%d (%d%%)"):format(entry.level, math.floor(entry.progress / 10))
-end
-
-function Stats:BuildFriends(page)
-    self.friendsTable = CreateTable(page, {
-        { key = "RANK_COL_RANK", width = 28, justify = "RIGHT" },
-        { key = "RANK_COL_NAME", width = 210, justify = "LEFT" },
-        { key = "STATS_COL_LEVEL", width = 90, justify = "RIGHT" },
-        { key = "RANK_COL_DEATHS", width = 90, justify = "RIGHT" },
-        { key = "RANK_COL_SEEN", width = 162, justify = "RIGHT" },
-    }, 0, 0, CONTENT_WIDTH, 12)
-    self.friendsTable.tooltip = function(tooltip, entry)
-        tooltip:AddLine(ns.ColorizeByClass(ns.Ranking.ShortName(entry.key, true), entry.class))
-        AddRow(tooltip, L["STATS_LEVEL"], LevelText(entry))
-        AddRow(tooltip, L["RANK_COL_DEATHS"], ns.FormatInteger(entry.deaths))
-        local muted = Theme.colors.muted
-        tooltip:AddLine(L[entry.mine and "RANK_TOOLTIP_MINE" or "RANK_TOOLTIP_FRIEND"], muted[1], muted[2], muted[3])
-    end
-
-    self.friendsNote = Theme:CreateText(page, "muted")
-    self.friendsNote:SetPoint("BOTTOMLEFT", 0, 6)
-    self.friendsNote:SetPoint("RIGHT", -112, 0)
-    self.friendsNote:SetWordWrap(true)
-
-    local options = Theme:CreateButton(page, "RANK_OPTIONS", 100, 22, function()
-        ns.Options:Open()
-    end)
-    options:SetPoint("BOTTOMRIGHT", 0, 0)
-end
-
 --------------------------------------------------------------------------------
 -- Refresh
 --------------------------------------------------------------------------------
@@ -490,13 +460,6 @@ function Stats:Refresh()
     for value, frame in pairs(self.pages) do
         frame:SetShown(value == page)
     end
-    -- The ranking is the same whatever the scope.
-    self.scopeSelector:SetShown(page ~= "friends")
-    if page == "friends" then
-        self:RefreshFriends()
-        return
-    end
-
     local data
     if self.scope == "account" then
         data = ns.Stats:CollectAccount()
@@ -635,42 +598,16 @@ function Stats:RefreshPrey(data)
     end, "STATS_NO_DATA")
 end
 
---- Seen column: now for the logged character, else how long ago.
-local function SeenText(entry)
-    if entry.current then
-        return L["CHAR_SEEN_NOW"]
-    end
-    if not entry.seen then
-        return UNKNOWN()
-    end
-    return L["CHAR_SEEN_AGO"]:format(ns.FormatDuration(math.max(0, time() - entry.seen)))
-end
-
-function Stats:RefreshFriends()
-    local ranking = ns.Ranking
-    local accent = Theme.Hex(Theme.colors.accent)
-    self.friendsTable:SetEntries(ranking:GetEntries(), function(entry, rank)
-        local name = ns.ColorizeByClass(ranking.ShortName(entry.key), entry.class)
-        if entry.mine then
-            name = name .. " " .. accent .. "(" .. L["RANK_MINE"] .. ")|r"
-        end
-        return { rank .. ".", name, LevelText(entry), ns.FormatInteger(entry.deaths), SeenText(entry) }
-    end, "STATS_NO_DATA")
-
-    self.friendsNote:SetText(L[ranking:IsActive() and "RANK_FOOTER" or "RANK_DISABLED"])
-end
-
-ns:RegisterMessage("XPL_RANKING_CHANGED", function()
-    if ns.settings.panel.statsPage == "friends" then
-        ns.MainPanel:Refresh()
-    end
-end)
-for _, message in ipairs({ "XPL_DEATH", "XPL_DEATH_SYNC" }) do
-    ns:RegisterMessage(message, function()
-        if ns.settings.panel.statsPage == "friends" then
-            ns.MainPanel:Refresh()
-        end
-    end)
-end
+-- Shared with the Friends view.
+ns.StatsBlocks = {
+    CreateTable = CreateTable,
+    CreateTile = CreateTile,
+    SetTile = SetTile,
+    AddRow = AddRow,
+    TILE_WIDTH = TILE_WIDTH,
+    TILE_HEIGHT = TILE_HEIGHT,
+    TILE_GAP = TILE_GAP,
+    TILE_COLUMNS = TILE_COLUMNS,
+}
 
 ns.MainPanel:RegisterView(Stats)

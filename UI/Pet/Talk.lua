@@ -17,7 +17,9 @@
               count: [5], [10], [20]... [100], plain text) on those deaths,
               `deathhundreds` (%d) on 200, 300...; and `frienddeath` (%s,
               %d: the friend's name and deaths, in that order) when a
-              Battle.net friend who shares dies (see Ranking)
+              Battle.net friend who shares dies, and `friendlevel` (%s, %d:
+              the friend's name and new level) when one levels up (see
+              Ranking)
       cheer   cheering lines grouped by what the player is doing (CONTEXTS)
 
     Lines of a list come in shuffled rounds: every line is said once before
@@ -43,7 +45,7 @@
     it: the murloc gurgles in murloc, Nihil is a sweet pessimist. A new pet
     needs, in EVERY locale file (Locales\PetPhrases_<locale>.lua):
       - every key of `events`, about 5 lines each (8 for poke and
-        deathcount, 6 for frienddeath, 3 for deathhundreds, one per count
+        deathcount, 6 for frienddeath and friendlevel, 3 for deathhundreds, one per count
         in deathmilestone), `annoyed` included (about 10 lines, in order of
         growing annoyance, in its own way of getting annoyed);
       - every context of CONTEXTS in `cheer`, at least 12 lines each (24 in

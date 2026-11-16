@@ -11,7 +11,7 @@ local L = ns.L
 
 local Overview = { id = "overview", label = "TAB_OVERVIEW" }
 
-local CONTENT_WIDTH = 612
+local CONTENT_WIDTH = ns.MainPanel.CONTENT_WIDTH
 local TILE_GAP = 8
 local MAX_RATE_BLOCKS = 36
 local GRAPH_REFRESH_SECONDS = 30

@@ -21,10 +21,30 @@ local MainPanel = ns:NewModule("MainPanel")
 local Theme = ns.Theme
 
 -- Size of the area handed to the views; the skin builds the window around it.
-local CONTENT_WIDTH, CONTENT_HEIGHT = 612, 354
+local CONTENT_WIDTH, CONTENT_HEIGHT = 700, 394
+-- The views were laid out for 612 px: the rest goes to a text column of
+-- each table (see MainPanel.Widen).
+local BASE_WIDTH = 612
 local REFRESH_THROTTLE = 0.5
 
 MainPanel.views = {}
+MainPanel.CONTENT_WIDTH = CONTENT_WIDTH
+MainPanel.EXTRA_WIDTH = CONTENT_WIDTH - BASE_WIDTH
+
+--- Gives the extra width (EXTRA_WIDTH, or `extra`) to column `index` of a
+--- column layout and moves the columns after it.
+function MainPanel.Widen(columns, index, extra)
+    extra = extra or MainPanel.EXTRA_WIDTH
+    for i = index, #columns do
+        local column = columns[i]
+        if i == index then
+            column.width = column.width + extra
+        elseif column.x then
+            column.x = column.x + extra
+        end
+    end
+    return columns
+end
 
 --------------------------------------------------------------------------------
 -- View registry and shared state
@@ -145,6 +165,7 @@ function MainPanel:Build()
         frame.tabs[view.id] = tab
         previous = tab
     end
+    self:UpdateTabs()
 
     -- One content frame per view, created when the view is first shown.
     frame.contents = {}
@@ -187,9 +208,7 @@ function MainPanel:UpdateHeader()
     end
     local level = record and record.level or 0
     local levelText = "  " .. ns.L["LEVEL_SHORT"]:format(level)
-    for _, tab in pairs(self.frame.tabs) do
-        tab:UpdateWidth()
-    end
+    self:FitTabs()
     -- Shorter forms of the subtitle, used when the full one reaches the tabs.
     local forms = {
         ns.L["VIEWING_CHARACTER"]:format(self.FormatCharacterName(record, true) .. levelText),
@@ -205,9 +224,63 @@ function MainPanel:UpdateHeader()
     end
 end
 
+--- True when a view can be opened now (views may define IsAvailable, as
+--- Friends does while sharing is off).
+local function IsAvailable(view)
+    return not view.IsAvailable or view:IsAvailable() and true or false
+end
+
+--- Shows only the tabs of the available views, chained left to right, and
+--- leaves the active view when it stops being available.
+function MainPanel:UpdateTabs()
+    local frame = self.frame
+    if not frame then
+        return
+    end
+    local previous
+    for _, view in ipairs(self.views) do
+        local tab = frame.tabs[view.id]
+        local shown = IsAvailable(view)
+        tab:SetShown(shown)
+        if shown then
+            tab:ClearAllPoints()
+            Theme:PlaceTab(frame, tab, previous)
+            previous = tab
+        end
+    end
+    frame.lastTab = previous
+    if self.activeView and not IsAvailable(self.activeView) then
+        self:SelectView(self.views[1].id)
+    elseif self.activeView then
+        self:UpdateHeader()
+    end
+end
+
+local TAB_PADDINGS = { 12, 8, 4, 0 }
+
+--- Sizes the tabs to their labels, with less padding when the row would be
+--- wider than the window (long labels in some languages).
+function MainPanel:FitTabs()
+    local frame = self.frame
+    local available = frame:GetWidth() - 20
+    for _, padding in ipairs(TAB_PADDINGS) do
+        local total = 0
+        for _, view in ipairs(self.views) do
+            local tab = frame.tabs[view.id]
+            tab:UpdateWidth(padding)
+            if IsAvailable(view) then
+                total = total + tab:GetWidth() + 4
+            end
+        end
+        if total <= available then
+            return
+        end
+    end
+end
+
 --- True when the subtitle shares the tab row and runs into the last tab.
 function MainPanel:SubtitleOverlapsTabs()
-    local subtitle, lastTab = self.frame.subtitle, self.frame.tabs[self.views[#self.views].id]
+    local subtitle, lastTab = self.frame.subtitle, self.frame.lastTab
     local right = lastTab and lastTab:GetRight()
     local subtitleRight = subtitle:GetRight()
     if not right or not subtitleRight or not subtitle:GetTop() or not lastTab:GetTop() then
@@ -223,7 +296,7 @@ end
 
 local function FindView(self, id)
     for _, view in ipairs(self.views) do
-        if view.id == id then
+        if view.id == id and IsAvailable(view) then
             return view
         end
     end
@@ -300,6 +373,7 @@ function MainPanel:OnLogin()
     ns:RegisterMessage("XPL_XP_GAINED", function() self:Refresh() end)
     ns:RegisterMessage("XPL_STATE_CHANGED", function() self:Refresh() end)
     ns:RegisterMessage("XPL_RUN_FINISHED", function() self:Refresh() end)
+    ns:RegisterMessage("XPL_RANKING_CHANGED", function() self:UpdateTabs() end)
     ns:RegisterMessage("XPL_DATA_RESET", function(_, key)
         if key == self.viewedKey and not ns.db.characters[key] then
             self.viewedKey = nil

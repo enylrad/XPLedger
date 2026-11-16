@@ -102,6 +102,14 @@ ns.PetPhrases.enUS = {
                 "Aaaughibbrgubugbugrguburgle! %s! %d deaths!",
                 "Mrgl bring news: %s died. Total %d. Mrgl send fish.",
             },
+            friendlevel = {
+                "Mrgl! %s is level %d now! Party at the pond!",
+                "Mrrrgl mrgl! %s hit level %d! Mrgl claps with fins!",
+                "Aaaughibbrgubugbugrguburgle! %s, level %d!",
+                "Mrgl brings news: %s is level %d. And you, mrgl?",
+                "Mrgl mrgl! %s reached %d! Fish for everyone!",
+                "Mrglgl... %s level %d. Mrgl a little jealous.",
+            },
             poke = {
                 "Mrglglgl!",
                 "Mrrgll?",
@@ -427,6 +435,14 @@ ns.PetPhrases.enUS = {
                 "News from the abyss: %s, death %d.",
                 "%s has rejoined the nothing. %d times. Briefly, I hope.",
                 "A small light went out: %s. %d so far. It will come back.",
+            },
+            friendlevel = {
+                "%s reached level %d. The Void takes note.",
+                "A little light grows brighter: %s, level %d.",
+                "%s is level %d now. Everything grows, even the dark.",
+                "News from the abyss: %s reached %d.",
+                "%s, level %d. I am happy. A little.",
+                "%s climbs to %d. Someday I will cheer for you too.",
             },
             poke = {
                 "Mm?",
@@ -771,6 +787,14 @@ ns.PetPhrases.enUS = {
                 "%s died. %d. Don't laugh, you're next.",
                 "Breaking news: %s, death number %d. Nobody is surprised.",
                 "%s fell over. %d. Probably went left.",
+            },
+            friendlevel = {
+                "%s is already at %d. You, on the other hand...",
+                "%s hit level %d. Are you sure you play the same game?",
+                "%s, level %d. Meanwhile, here we are.",
+                "Breaking news: %s reaches %d. You still have a while.",
+                "%s is level %d now. Go ask for tips.",
+                "%s climbs to %d. Do not take it personally. Or do.",
             },
             poke = {
                 "What.",

@@ -317,8 +317,8 @@ function Options:BuildPanel(panel)
     self:BuildRanking(panel, COLUMN_X[1], -590)
 end
 
---- Optional deaths ranking with Battle.net friends (see Ranking): sharing
---- and death notices.
+--- Optional friends ranking over Battle.net (see Ranking): sharing, death
+--- notices and level up notices.
 function Options:BuildRanking(panel, x, y)
     local widgets = self.widgets
     local Ranking = ns.Ranking
@@ -350,12 +350,37 @@ function Options:BuildRanking(panel, x, y)
     widgets.rankNotify:SetPoint("TOPLEFT", x + 20, y - 54)
     dependents[#dependents + 1] = widgets.rankNotify
 
-    local help = Caption(panel, "OPT_RANK_DESC", x, y - 86, "small")
+    widgets.rankNotifyLevels = Theme:CreateCheckbox(panel, "OPT_RANK_NOTIFY_LEVELS",
+        function() return ns.settings.ranking.notifyLevels end,
+        function(value) ns.settings.ranking.notifyLevels = value end)
+    widgets.rankNotifyLevels:SetPoint("TOPLEFT", x + 20, y - 80)
+    dependents[#dependents + 1] = widgets.rankNotifyLevels
+
+    widgets.rankOpen = Theme:CreateButton(panel, "OPT_RANK_OPEN", 140, 22, function()
+        ns.MainPanel:Show("friends")
+    end)
+    widgets.rankOpen:SetPoint("TOPLEFT", x + 20, y - 110)
+    dependents[#dependents + 1] = widgets.rankOpen
+
+    -- How many friends answered this login, kept current while shown.
+    local status = Theme:CreateText(panel, "muted")
+    status:SetPoint("TOPLEFT", x + 20, y - 140)
+    status:SetWidth(260)
+    status:SetJustifyH("LEFT")
+    status:SetWordWrap(true)
+    status.Refresh = function(text)
+        text:SetText(ns.settings.ranking.enabled and L["OPT_RANK_STATUS"]:format(Ranking:CountPeers()) or "")
+    end
+    widgets.rankStatus = status
+    ns:RegisterMessage("XPL_RANKING_CHANGED", function() status:Refresh() end)
+
+    local help = Caption(panel, "OPT_RANK_DESC", x, y - 166, "small")
     help:SetWidth(280)
     help:SetWordWrap(true)
 
     self.updateRanking = UpdateEnabled
     UpdateEnabled()
+    status:Refresh()
 end
 
 --------------------------------------------------------------------------------

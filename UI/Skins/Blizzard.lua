@@ -249,8 +249,9 @@ function Skin:CreateTab(window, label, onClick)
         end
     end
 
-    function tab:UpdateWidth()
-        PanelTemplates_TabResize(self, 12)
+    --- `padding` (default 12) shrinks when the tabs do not fit the window.
+    function tab:UpdateWidth(padding)
+        PanelTemplates_TabResize(self, padding or 12)
     end
 
     tab:UpdateWidth()
